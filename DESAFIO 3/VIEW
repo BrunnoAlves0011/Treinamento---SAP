@@ -1,5 +1,5 @@
 *&---------------------------------------------------------------------*
-*&  Include           YBH_RP_02_IN_VIEW
+*& Include          YBH_RP_03_IN_VIEW
 *&---------------------------------------------------------------------*
 
 CLASS report_view DEFINITION.
@@ -35,13 +35,13 @@ CLASS report_view IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD selection_screen.
-    CASE sy-ucomm.
-      WHEN 'MOD_REG'.
-
-        model->init_modify_met( ).
-
-      WHEN OTHERS.
-    ENDCASE.
+*    CASE sy-ucomm.
+*      WHEN 'MOD_REG'.
+*
+*        model->init_modify_met( ).
+*
+*      WHEN OTHERS.
+*    ENDCASE.
   ENDMETHOD.
 
   METHOD end_of_selection.
@@ -102,11 +102,8 @@ CLASS report_view IMPLEMENTATION.
 *    columns->set_optimize( abap_true ).
 
 *   Renomeia as colunas do relatorio alv com os nomes propostos
-    column = columns->get_column( 'MATNR' ).
-    column->set_long_text( 'Produto' ).
-
-    column = columns->get_column( 'MAKTX' ).
-    column->set_long_text( 'Descr. Produto' ).
+*    column = columns->get_column( 'LIFNR' ).
+*    column->set_long_text( 'Vendedor' ).
 
     column = columns->get_column( 'BRGEW' ).
     column->set_long_text( 'Quantidade (KG)' ).
@@ -131,11 +128,9 @@ CLASS report_view IMPLEMENTATION.
   METHOD set_color.
 
     LOOP AT model->it_table ASSIGNING FIELD-SYMBOL(<f>).
-      IF <f>-brgew < 1000.
-        <f>-color = VALUE #( fname = 'BRGEW' ( color-col = 6
+        <f>-color = VALUE #( fname = 'BRGEW' ( color-col = 3
                                color-int = 0
                                color-inv = 0 ) ).
-      ENDIF.
     ENDLOOP.
 
     salv_alv->get_columns( )->set_color_column( 'COLOR' ).

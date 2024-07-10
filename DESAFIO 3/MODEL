@@ -1,5 +1,5 @@
 *&---------------------------------------------------------------------*
-*&  Include           YBH_RP_02_IN_MODEL
+*& Include          YBH_RP_03_IN_MODEL
 *&---------------------------------------------------------------------*
 
 *TABLES: kna1, vbak, vbap.
@@ -9,8 +9,7 @@ CLASS report_model DEFINITION.
   PUBLIC SECTION.
 
     TYPES: BEGIN OF ty_table,
-             matnr TYPE vbap-matnr,
-             maktx TYPE makt-maktx,
+             lifnr TYPE vbpa-lifnr,
              brgew TYPE vbap-brgew,
              netwr TYPE vbap-netwr,
              erdat TYPE vbak-erdat,
@@ -27,12 +26,12 @@ CLASS report_model DEFINITION.
           st_table TYPE ty_table.
 
     METHODS: start_of_selection,
-      get_pedido,
-      init_modify_met,
-      validate_screen_mod,
-      modify_reg,
-      loop_data,
-      on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING row
+             get_pedido,
+             init_modify_met,
+             validate_screen_mod,
+             modify_reg,
+             loop_data,
+             on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING row
                                                                                column.
 
 ENDCLASS.
@@ -47,12 +46,22 @@ CLASS report_model IMPLEMENTATION.
 
   METHOD get_pedido.
 
-    SELECT vbap~matnr, makt~maktx, vbap~brgew, vbap~netwr, vbak~erdat
-      FROM vbap
-      INNER JOIN vbak ON vbak~vbeln = vbap~vbeln
-      INNER JOIN makt ON makt~matnr = vbap~matnr
-      WHERE vbap~matnr IN @fil_prod
-      AND vbak~erdat   IN @fil_dat
+*    DO 10 TIMES.
+*
+*      st_table-lifnr = 'Roberto'.
+*      st_table-brgew = '1000'.
+*      st_table-netwr = '1000'.
+*      st_table-erdat  = '20240710'.
+*      append st_table to it_table.
+*
+*    ENDDO.
+
+    SELECT vbpa~lifnr, vbap~brgew, vbap~netwr, vbak~erdat
+      FROM vbpa
+      INNER JOIN vbap  ON vbap~vbeln = vbpa~vbeln
+      INNER JOIN vbak  ON vbak~vbeln = vbpa~vbeln
+      WHERE vbpa~lifnr IN @fil_vend
+      AND   vbak~erdat IN @fil_dat
       INTO CORRESPONDING FIELDS OF TABLE @it_table.
 
     me->loop_data( ).
@@ -97,7 +106,7 @@ CLASS report_model IMPLEMENTATION.
 
     LOOP AT it_table INTO st_table.
 
-      READ TABLE it_table INTO  st_table INDEX sy-tabix.
+      READ TABLE it_table INTO st_table INDEX sy-tabix.
 
       st_table-mes = st_table-erdat+4(2).
       st_table-ano = st_table-erdat(4).
@@ -111,13 +120,10 @@ CLASS report_model IMPLEMENTATION.
 
     READ TABLE me->it_table INTO me->st_table INDEX row.
 
-    SET PARAMETER ID 'MAT' FIELD st_table-matnr.
-    CALL TRANSACTION 'MM03' AND SKIP FIRST SCREEN.
-
+*    SET PARAMETER ID 'LIF' FIELD st_table-lifnr.
+*    CALL TRANSACTION 'XK03' AND SKIP FIRST SCREEN.
 
   ENDMETHOD.
 
 
 ENDCLASS.
-
-
