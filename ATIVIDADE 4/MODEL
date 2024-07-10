@@ -1,0 +1,79 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZTR_ATIVIDADE4_MVC_MODEL
+*&---------------------------------------------------------------------*
+CLASS report_model DEFINITION.
+
+  PUBLIC SECTION.
+
+    DATA: t_tabela TYPE TABLE OF ztt_atvid4,
+          s_pedido TYPE ztt_atvid4.
+
+    METHODS: start_of_selection,
+      get_pedido,
+      init_modify_met,
+      validate_screen_mod,
+      modify_reg.
+
+ENDCLASS.
+
+CLASS report_model IMPLEMENTATION.
+
+  METHOD start_of_selection.
+
+    me->get_pedido( ).
+
+  ENDMETHOD.
+
+  METHOD get_pedido.
+
+*    DO 10 TIMES.
+*
+*      s_pedido-numero_pedido = sy-index.
+*      s_pedido-data_pedido = sy-datum.
+*      MODIFY ztt_atvid4 FROM s_pedido.
+*
+*    ENDDO.
+
+    SELECT *
+      FROM ztt_atvid4
+      INTO TABLE t_tabela
+      WHERE numero_pedido IN fil_num
+      AND data_pedido IN fil_dat.
+
+    CLEAR s_pedido.
+
+  ENDMETHOD.
+
+  METHOD init_modify_met.
+
+    me->validate_screen_mod( ).
+    me->modify_reg( ).
+
+  ENDMETHOD.
+
+  METHOD validate_screen_mod.
+
+    IF mod_num IS INITIAL.
+      MESSAGE 'Numero Pedido Obrigatorio' TYPE 'E'.
+    ENDIF.
+
+    IF mod_dat IS INITIAL.
+      MESSAGE 'Data Pedido Obrigatorio' TYPE 'E'.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD modify_reg.
+
+    DATA: pedido_cab TYPE ztt_atvid4.
+
+    pedido_cab-numero_pedido = mod_num.
+    pedido_cab-data_pedido = mod_dat.
+
+    MODIFY ztt_atvid4 FROM pedido_cab.
+
+    MESSAGE 'Pedido Salvo/Alterado com Sucesso!' TYPE 'S'.
+
+  ENDMETHOD.
+
+ENDCLASS.

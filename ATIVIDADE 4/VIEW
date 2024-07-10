@@ -1,0 +1,88 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZTR_ATIVIDADE4_MVC_VIEW
+*&---------------------------------------------------------------------*
+CLASS report_view DEFINITION.
+
+  PUBLIC SECTION.
+
+    DATA: salv_alv TYPE REF TO cl_salv_table.
+
+    METHODS: initialization,
+      selection_screen_o,
+      selection_screen IMPORTING model TYPE REF TO report_model,
+      end_of_selection IMPORTING model TYPE REF TO report_model,
+      display_alv      IMPORTING model TYPE REF TO report_model,
+      set_toolbar,
+      set_fieldcat.
+
+ENDCLASS.
+
+CLASS report_view IMPLEMENTATION.
+
+  METHOD initialization.
+
+    filt = '@4G@ Filtros'.
+    modi = '@17@ Criação/Modificação'.
+    mod_btn = '@2L@ Salvar'.
+
+  ENDMETHOD.
+
+  METHOD selection_screen_o.
+
+  ENDMETHOD.
+
+  METHOD selection_screen.
+    CASE sy-ucomm.
+      WHEN 'MOD_REG'.
+
+        model->init_modify_met( ).
+
+      WHEN OTHERS.
+    ENDCASE.
+  ENDMETHOD.
+
+  METHOD end_of_selection.
+
+    me->display_alv( model ).
+
+  ENDMETHOD.
+
+  METHOD display_alv.
+
+CALL METHOD cl_salv_table=>factory
+  IMPORTING
+    r_salv_table   = salv_alv
+  CHANGING
+    t_table        = model->t_tabela
+    .
+
+    me->set_toolbar( ).
+    me->set_fieldcat( ).
+
+    salv_alv->display( ).
+
+  ENDMETHOD.
+
+  METHOD set_toolbar.
+
+    DATA: functions TYPE REF TO cl_salv_functions_list.
+    functions = salv_alv->get_functions( ).
+    functions->set_all( ).
+
+  ENDMETHOD.
+
+  METHOD set_fieldcat.
+
+    DATA: columns TYPE REF TO cl_salv_columns_table,
+          column  TYPE REF TO cl_salv_column.
+
+    columns = salv_alv->get_columns( ).
+
+    columns->set_optimize( abap_true ).
+
+    column = columns->get_column( 'MANDT' ).
+    column->set_visible( abap_false ).
+
+  ENDMETHOD.
+
+ENDCLASS.

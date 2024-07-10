@@ -1,0 +1,31 @@
+*&---------------------------------------------------------------------*
+*& Report  ZTR_ATIVIDADE4
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+REPORT ZTR_ATIVIDADE4.
+
+INCLUDE: ZTR_ATIVIDADE4_mvc_scr,
+         ZTR_ATIVIDADE4_mvc_model,
+         ZTR_ATIVIDADE4_mvc_view,
+         ZTR_ATIVIDADE4_mvc_controller.
+
+DATA: gc_controller TYPE REF TO report_controller.
+
+INITIALIZATION.
+  CREATE OBJECT gc_controller.
+  gc_controller->initialization( ).
+
+AT SELECTION-SCREEN OUTPUT.
+  gc_controller->selection_screen_o( ).
+
+AT SELECTION-SCREEN.
+  gc_controller->selection_screen( ).
+
+START-OF-SELECTION.
+  gc_controller->start_of_selection( ).
+
+END-OF-SELECTION.
+  gc_controller->end_of_selection( ).

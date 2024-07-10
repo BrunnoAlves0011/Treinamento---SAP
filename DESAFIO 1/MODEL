@@ -1,0 +1,122 @@
+*&---------------------------------------------------------------------*
+*&  Include           YBH_RP_01_MVC_MODEL
+*&---------------------------------------------------------------------*
+
+*TABLES: kna1, vbak, vbap.
+
+CLASS report_model DEFINITION.
+
+  PUBLIC SECTION.
+
+    TYPES: BEGIN OF ty_table,
+             kunnr TYPE kna1-kunnr,
+             name1 TYPE kna1-name1,
+             brgew TYPE vbap-brgew,
+             netwr TYPE vbap-netwr,
+             erdat TYPE vbak-erdat,
+             data  TYPE d,
+             mes   TYPE c LENGTH 8,
+             ano   TYPE c LENGTH 8,
+           END OF ty_table.
+
+    DATA: p_month TYPE string,
+          p_year  TYPE string.
+
+    DATA: it_table TYPE TABLE OF ty_table,
+          st_table TYPE ty_table.
+
+    METHODS: start_of_selection,
+      get_pedido,
+      init_modify_met,
+      validate_screen_mod,
+      modify_reg,
+      loop_data,
+      on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING row
+                                                                               column.
+
+ENDCLASS.
+
+CLASS report_model IMPLEMENTATION.
+
+  METHOD start_of_selection.
+
+    me->get_pedido( ).
+
+  ENDMETHOD.
+
+  METHOD get_pedido.
+
+    SELECT kna1~kunnr kna1~name1 vbap~brgew vbap~netwr vbak~erdat
+      INTO TABLE it_table
+      FROM vbak
+      INNER JOIN vbap ON vbak~vbeln = vbap~vbeln
+      INNER JOIN kna1 ON kna1~kunnr = vbak~kunnr
+      WHERE kna1~kunnr IN fil_cli
+      AND vbak~erdat IN fil_dat.
+
+    me->loop_data( ).
+
+  ENDMETHOD.
+
+  METHOD init_modify_met.
+
+    me->validate_screen_mod( ).
+    me->modify_reg( ).
+
+  ENDMETHOD.
+
+  METHOD validate_screen_mod.
+
+*    IF mod_num IS INITIAL.
+*      MESSAGE 'Numero Pedido Obrigatorio' TYPE 'E'.
+*    ENDIF.
+*
+*    IF mod_dat IS INITIAL.
+*      MESSAGE 'Data Pedido Obrigatorio' TYPE 'E'.
+*    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD modify_reg.
+
+*    DATA: pedido_cab TYPE nome_tabela.
+*
+*    pedido_cab-numero_pedido = mod_num.
+*    pedido_cab-data_pedido = mod_dat.
+
+*    MODIFY nome_tabela FROM pedido_cab.
+*
+*    MESSAGE 'Pedido Salvo/Alterado com Sucesso!' TYPE 'S'.
+
+  ENDMETHOD.
+
+  METHOD loop_data.
+
+    DATA: date(8).
+
+    LOOP AT it_table INTO st_table.
+
+      READ TABLE it_table INTO  st_table INDEX sy-tabix.
+
+      st_table-mes = st_table-erdat+4(2).
+      st_table-ano = st_table-erdat(4).
+      MODIFY it_table FROM st_table.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD on_double_click.
+    DATA: selfield TYPE kkblo_selfield.
+
+    selfield = selfield.
+
+    READ TABLE me->it_table INTO me->st_table INDEX selfield-tabindex.
+
+    SET PARAMETER ID 'KUN' FIELD st_table-kunnr.
+    CALL TRANSACTION 'XD03' AND SKIP FIRST SCREEN.
+
+  ENDMETHOD.
+
+
+ENDCLASS.
