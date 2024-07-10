@@ -1,5 +1,5 @@
 *&---------------------------------------------------------------------*
-*&  Include           YBH_RP_01_MVC_CONTROLLER
+*&  Include           YBH_RP_02_IN_CONTROLLER
 *&---------------------------------------------------------------------*
 
 CLASS report_controller DEFINITION.

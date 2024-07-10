@@ -1,16 +1,16 @@
 *&---------------------------------------------------------------------*
-*& Report  YBH_RP_01
+*& Report  YBH_RP_02
 *&
 *&---------------------------------------------------------------------*
 *&
 *&
 *&---------------------------------------------------------------------*
-REPORT YBH_RP_01.
+REPORT YBH_RP_02.
 
-INCLUDE: YBH_RP_01_mvc_scr,
-         YBH_RP_01_mvc_model,
-         YBH_RP_01_mvc_view,
-         YBH_RP_01_mvc_controller.
+INCLUDE: YBH_RP_02_in_scr,
+         YBH_RP_02_in_model,
+         YBH_RP_02_in_view,
+         YBH_RP_02_in_controller.
 
 DATA: gc_controller TYPE REF TO report_controller.
 
