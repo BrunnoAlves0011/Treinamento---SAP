@@ -1,0 +1,60 @@
+*&---------------------------------------------------------------------*
+*& Include          YBH_RP_04_IN_CONTROLLER
+*&---------------------------------------------------------------------*
+
+CLASS report_controller DEFINITION.
+
+  PUBLIC SECTION.
+
+    DATA: view  TYPE REF TO report_view,
+          model TYPE REF TO report_model.
+
+    METHODS:  constructor,
+              initialization,
+              selection_screen_o,
+              selection_screen,
+              start_of_selection,
+              end_of_selection.
+
+ENDCLASS.
+
+CLASS report_controller IMPLEMENTATION.
+
+  METHOD constructor.
+
+    CREATE OBJECT view.
+    CREATE OBJECT model.
+
+  ENDMETHOD.
+
+  METHOD initialization.
+
+    me->view->initialization( ).
+
+  ENDMETHOD.
+
+  METHOD selection_screen_o.
+
+    me->view->selection_screen_o( ).
+
+  ENDMETHOD.
+
+  METHOD selection_screen.
+
+    me->view->selection_screen( me->model ).
+
+  ENDMETHOD.
+
+  METHOD start_of_selection.
+
+    me->model->start_of_selection( ).
+
+  ENDMETHOD.
+
+  METHOD end_of_selection.
+
+    me->view->end_of_selection( model ).
+
+  ENDMETHOD.
+
+ENDCLASS.

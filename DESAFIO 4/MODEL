@@ -1,0 +1,135 @@
+*&---------------------------------------------------------------------*
+*& Include          YBH_RP_04_IN_MODEL
+*&---------------------------------------------------------------------*
+
+*TABLES: kna1, vbak, vbap.
+
+CLASS report_model DEFINITION.
+
+  PUBLIC SECTION.
+
+    TYPES: BEGIN OF ty_table,
+             matnr TYPE lips-matnr,
+             maktx TYPE makt-maktx,
+             brgew TYPE vbap-brgew,
+             netwr TYPE vbap-netwr,
+             tknum TYPE vttk-tknum,
+           END OF ty_table.
+
+    DATA: p_month TYPE string,
+          p_year  TYPE string.
+
+    DATA: it_table TYPE TABLE OF ty_table,
+          st_table TYPE ty_table.
+
+    METHODS: start_of_selection,
+             get_pedido,
+             init_modify_met,
+             validate_screen_mod,
+             modify_reg,
+             loop_data,
+             on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING row
+                                                                               column.
+
+ENDCLASS.
+
+CLASS report_model IMPLEMENTATION.
+
+  METHOD start_of_selection.
+
+    me->get_pedido( ).
+
+  ENDMETHOD.
+
+  METHOD get_pedido.
+
+    SELECT lips~matnr, makt~maktx, vbap~brgew, vbap~netwr, vttk~tknum
+      FROM vttk
+      INNER JOIN vttp ON vttp~tknum = vttk~tknum
+      INNER JOIN lips ON lips~vbeln = vttp~vbeln
+      INNER JOIN vbfa ON vbfa~vbeln = lips~vbeln
+      INNER JOIN vbap ON vbap~vbeln = vbfa~vbelv
+      INNER JOIN makt ON makt~matnr = lips~matnr
+      WHERE lips~matnr IN @fil_prod
+      AND   vttk~erdat IN @fil_dat
+      INTO CORRESPONDING FIELDS OF TABLE @it_table.
+
+*    me->loop_data( ).
+
+  ENDMETHOD.
+
+  METHOD init_modify_met.
+
+    me->validate_screen_mod( ).
+    me->modify_reg( ).
+
+  ENDMETHOD.
+
+  METHOD validate_screen_mod.
+
+*    IF mod_num IS INITIAL.
+*      MESSAGE 'Numero Pedido Obrigatorio' TYPE 'E'.
+*    ENDIF.
+*
+*    IF mod_dat IS INITIAL.
+*      MESSAGE 'Data Pedido Obrigatorio' TYPE 'E'.
+*    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD modify_reg.
+
+*    DATA: pedido_cab TYPE nome_tabela.
+*
+*    pedido_cab-numero_pedido = mod_num.
+*    pedido_cab-data_pedido = mod_dat.
+
+*    MODIFY nome_tabela FROM pedido_cab.
+*
+*    MESSAGE 'Pedido Salvo/Alterado com Sucesso!' TYPE 'S'.
+
+  ENDMETHOD.
+
+  METHOD loop_data.
+
+*    DATA: date(8).
+*
+*    LOOP AT it_table INTO st_table.
+*
+*      READ TABLE it_table INTO  st_table INDEX sy-tabix.
+*
+*      st_table-mes = st_table-erdat+4(2).
+*      st_table-ano = st_table-erdat(4).
+*      MODIFY it_table FROM st_table.
+*
+*    ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD on_double_click.
+    DATA: msg001 TYPE string.
+
+    READ TABLE me->it_table INTO me->st_table INDEX row.
+    msg001 = |Transporte: { st_table-tknum } Quantidade: { st_table-brgew }|.
+
+ CALL FUNCTION 'POPUP_TO_CONFIRM'
+      EXPORTING
+        TITLEBAR              = 'Informações'
+        TEXT_QUESTION         = msg001
+        TEXT_BUTTON_1         = 'Ok'
+        TEXT_BUTTON_2         = 'Cancelar'
+        DEFAULT_BUTTON        = '2'
+        DISPLAY_CANCEL_BUTTON = ''
+      EXCEPTIONS
+        TEXT_NOT_FOUND        = 1
+        OTHERS                = 2.
+
+*    READ TABLE me->it_table INTO me->st_table INDEX row.
+*
+*    SET PARAMETER ID 'KUN' FIELD st_table-kunnr.
+*    CALL TRANSACTION 'XD03' AND SKIP FIRST SCREEN.
+
+  ENDMETHOD.
+
+
+ENDCLASS.
