@@ -1,0 +1,168 @@
+*&---------------------------------------------------------------------*
+*& Include          YBH_RP_05_IN_MODEL
+*&---------------------------------------------------------------------*
+
+*TABLES: kna1, vbak, vbap.
+
+CLASS report_model DEFINITION.
+
+  PUBLIC SECTION.
+
+    TYPES: BEGIN OF ty_table,
+             icon   TYPE c LENGTH 4,
+             region TYPE adrc-region,
+             bezei  TYPE t005u-bezei,
+             city1  TYPE adrc-city1,
+             brgew  TYPE vbap-brgew,
+             netwr  TYPE vbap-netwr,
+             tknum  TYPE vttk-tknum,
+           END OF ty_table.
+
+    DATA: p_month TYPE string,
+          p_year  TYPE string.
+
+    DATA: it_table TYPE TABLE OF ty_table,
+          st_table TYPE ty_table.
+
+    METHODS: start_of_selection,
+             get_pedido,
+             init_modify_met,
+             validate_screen_mod,
+             modify_reg,
+             loop_data,
+             loop_icon,
+             on_double_click FOR EVENT double_click OF cl_salv_events_table IMPORTING row
+                                                                               column.
+ENDCLASS.
+
+CLASS report_model IMPLEMENTATION.
+
+  METHOD start_of_selection.
+
+    me->get_pedido( ).
+
+  ENDMETHOD.
+
+  METHOD get_pedido.
+
+    SELECT adrc~region, t005u~bezei, adrc~city1, vbap~brgew, vbap~netwr, vttk~tknum
+      FROM adrc
+      INNER JOIN kna1   ON kna1~adrnr   = adrc~addrnumber
+      INNER JOIN t005u  ON t005u~bland  = kna1~regio
+      INNER JOIN vbak   ON vbak~kunnr   = kna1~kunnr
+      INNER JOIN vbap   ON vbap~vbeln   = vbak~vbeln
+      INNER JOIN vbfa   ON vbfa~vbelv   = vbap~vbeln
+      INNER JOIN likp   ON likp~vbeln   = vbfa~vbeln
+      INNER JOIN lips   ON lips~vbeln   = likp~vbeln
+      INNER JOIN vttp   ON vttp~vbeln   = lips~vbeln
+      INNER JOIN vttk   ON vttk~tknum   = vttp~tknum
+      WHERE adrc~city1  IN @fil_cid
+      AND   adrc~region IN @fil_est
+      AND   vbak~erdat  IN @fil_dat
+      AND   t005u~land1 = 'BR'
+      AND   t005u~spras = 'P'
+      INTO CORRESPONDING FIELDS OF TABLE @it_table.
+
+*    me->loop_data( ).
+    me->loop_icon( ).
+
+  ENDMETHOD.
+
+  METHOD init_modify_met.
+
+    me->validate_screen_mod( ).
+    me->modify_reg( ).
+
+  ENDMETHOD.
+
+  METHOD validate_screen_mod.
+
+*    IF mod_num IS INITIAL.
+*      MESSAGE 'Numero Pedido Obrigatorio' TYPE 'E'.
+*    ENDIF.
+*
+*    IF mod_dat IS INITIAL.
+*      MESSAGE 'Data Pedido Obrigatorio' TYPE 'E'.
+*    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD modify_reg.
+
+*    DATA: pedido_cab TYPE nome_tabela.
+*
+*    pedido_cab-numero_pedido = mod_num.
+*    pedido_cab-data_pedido = mod_dat.
+
+*    MODIFY nome_tabela FROM pedido_cab.
+*
+*    MESSAGE 'Pedido Salvo/Alterado com Sucesso!' TYPE 'S' DISPLAY LIKE 'I'.
+
+  ENDMETHOD.
+
+  METHOD loop_data.
+
+*    DATA: date(8).
+*
+*    LOOP AT it_table INTO st_table.
+*
+*      READ TABLE it_table INTO  st_table INDEX sy-tabix.
+*
+*      st_table-mes = st_table-erdat+4(2).
+*      st_table-ano = st_table-erdat(4).
+*      MODIFY it_table FROM st_table.
+*
+*    ENDLOOP.
+
+  ENDMETHOD.
+  METHOD loop_icon.
+
+    LOOP AT it_table INTO st_table.
+
+      READ TABLE it_table INTO st_table INDEX sy-tabix.
+
+      IF st_table-brgew > 1000.
+        st_table-icon = ICON_OKAY.
+      ELSE.
+        st_table-icon = ICON_CANCEL.
+      ENDIF.
+
+      MODIFY it_table FROM st_table.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD on_double_click.
+    DATA: msg001 TYPE string.
+    IF column = 'BRGEW'.
+      IF sy-subrc IS INITIAL.
+        READ TABLE me->it_table INTO me->st_table INDEX row.
+        msg001 = |Transporte: { st_table-tknum } Quantidade(KG): { st_table-brgew }|.
+
+        CALL FUNCTION 'POPUP_TO_CONFIRM'
+          EXPORTING
+            titlebar              = 'Informações'
+            text_question         = msg001
+            text_button_1         = 'Ok'
+            text_button_2         = 'Cancelar'
+            default_button        = '2'
+            display_cancel_button = ''
+          EXCEPTIONS
+            text_not_found        = 1
+            OTHERS                = 2.
+      ELSE.
+        MESSAGE 'Erro, não foi possivel encontrar o cliente.' TYPE 'E' DISPLAY LIKE 'I'.
+      ENDIF.
+    ELSE.
+      MESSAGE 'Erro, coluna incorreta.' TYPE 'E' DISPLAY LIKE 'I'.
+    ENDIF.
+
+*    READ TABLE me->it_table INTO me->st_table INDEX row.
+*
+*    SET PARAMETER ID 'KUN' FIELD st_table-kunnr.
+*    CALL TRANSACTION 'XD03' AND SKIP FIRST SCREEN.
+
+  ENDMETHOD.
+
+ENDCLASS.

@@ -1,0 +1,33 @@
+*&---------------------------------------------------------------------*
+*& Include          YBH_RP_05_IN_SCR
+*&---------------------------------------------------------------------*
+
+TABLES: adrc, vbak.
+
+SELECTION-SCREEN BEGIN OF SCREEN 110 AS SUBSCREEN.
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
+
+SELECT-OPTIONS: fil_est    FOR adrc-region NO INTERVALS OBLIGATORY,
+                fil_cid    FOR adrc-city1  NO INTERVALS OBLIGATORY,
+                fil_dat    FOR vbak-erdat.
+
+SELECTION-SCREEN END OF BLOCK b1.
+SELECTION-SCREEN END OF SCREEN 110.
+
+*SELECTION-SCREEN BEGIN OF SCREEN 120 AS SUBSCREEN.
+*SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE text-001.
+*
+*PARAMETERS: mod_num TYPE sflights-carrid,
+*            mod_dat TYPE sflights-fldate.
+*
+*SELECTION-SCREEN END OF BLOCK b2.
+*
+*SELECTION-SCREEN PUSHBUTTON 1(15) mod_btn USER-COMMAND mod_reg.
+*
+*SELECTION-SCREEN END OF SCREEN 120.
+
+SELECTION-SCREEN BEGIN OF TABBED BLOCK tab_screen FOR 8 LINES.
+
+SELECTION-SCREEN TAB (20) filt USER-COMMAND filter_evt DEFAULT SCREEN 110.
+
+SELECTION-SCREEN END OF BLOCK tab_screen.

@@ -1,0 +1,133 @@
+*&---------------------------------------------------------------------*
+*& Include          YBH_RP_05_IN_VIEW
+*&---------------------------------------------------------------------*
+
+CLASS report_view DEFINITION.
+
+  PUBLIC SECTION.
+
+    DATA: salv_alv TYPE REF TO cl_salv_table,
+          o_events TYPE REF TO cl_salv_events_table.
+
+    METHODS: initialization,
+             selection_screen_o,
+             selection_screen   IMPORTING model TYPE REF TO report_model,
+             end_of_selection   IMPORTING model TYPE REF TO report_model,
+             display_alv        IMPORTING model TYPE REF TO report_model,
+             set_toolbar,
+             set_fieldcat.
+
+ENDCLASS.
+
+CLASS report_view IMPLEMENTATION.
+
+  METHOD initialization.
+
+*    filt = '@4G@ Filtros'.
+*    modi = '@17@ Criação/Modificação'.
+*    mod_btn = '@2L@ Salvar'.
+
+  ENDMETHOD.
+
+  METHOD selection_screen_o.
+
+  ENDMETHOD.
+
+  METHOD selection_screen.
+*    CASE sy-ucomm.
+*      WHEN 'MOD_REG'.
+*
+*        model->init_modify_met( ).
+*
+*      WHEN OTHERS.
+*    ENDCASE.
+  ENDMETHOD.
+
+  METHOD end_of_selection.
+
+    me->display_alv( model ).
+
+  ENDMETHOD.
+
+  METHOD display_alv.
+    TRY.
+        CALL METHOD cl_salv_table=>factory
+          IMPORTING
+            r_salv_table = salv_alv
+          CHANGING
+            t_table      = model->it_table.
+
+        o_events = salv_alv->get_event( ).
+        SET HANDLER model->on_double_click FOR o_events.
+
+        me->set_toolbar( ).
+        me->set_fieldcat( ).
+
+        salv_alv->display( ).
+
+      CATCH cx_salv_msg .
+    ENDTRY.
+
+*    CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY_LVC'
+*      EXPORTING
+*        i_callback_program      = sy-repid
+*        i_callback_user_command = 'USER_COMMAND'
+*      TABLES
+*        t_outtab                = model->it_table.
+*
+*    CASE sy-ucomm.
+*      WHEN '&IC1'.
+*        model->on_double_click( ).
+*    ENDCASE.
+
+  ENDMETHOD.
+
+  METHOD set_toolbar.
+
+    DATA: functions TYPE REF TO cl_salv_functions_list.
+    functions = salv_alv->get_functions( ).
+    functions->set_default( ).
+
+  ENDMETHOD.
+
+  METHOD set_fieldcat.
+
+    DATA: columns TYPE REF TO cl_salv_columns_table,
+          column  TYPE REF TO cl_salv_column.
+
+    columns = salv_alv->get_columns( ).
+    column = columns->get_column( 'ICON' ).
+    column->set_alignment( if_salv_c_alignment=>centered ).
+
+*    columns->set_optimize( abap_true ).
+
+*   Renomeia as colunas do relatorio alv com os nomes propostos
+    column = columns->get_column( 'ICON' ).
+    column->set_long_text( 'Icone' ).
+
+    column = columns->get_column( 'REGION' ).
+    column->set_long_text( 'Estado' ).
+
+    column = columns->get_column( 'BEZEI' ).
+    column->set_long_text( 'Desc. Estado' ).
+
+    column = columns->get_column( 'CITY1' ).
+    column->set_long_text( 'Cidade' ).
+
+    column = columns->get_column( 'BRGEW' ).
+    column->set_long_text( 'Quantidade Entregue' ).
+
+    column = columns->get_column( 'NETWR' ).
+    column->set_long_text( 'Valor Total' ).
+
+*   Tira da visualização as colunas DATA e ERDAT
+*    column = columns->get_column( 'DATA' ).
+*    column->set_visible( abap_false ).
+*    column = columns->get_column( 'ERDAT' ).
+*    column->set_visible( abap_false ).
+     column = columns->get_column( 'TKNUM' ).
+     column->set_visible( abap_false ).
+
+  ENDMETHOD.
+
+ENDCLASS.
