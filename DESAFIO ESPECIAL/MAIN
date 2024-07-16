@@ -1,0 +1,40 @@
+*-----------------------------------------------------------------------
+* Empresa..: Caçola
+* Programa.: ZFIR0003
+* Tipo.....: Programa Report
+* Módulo...: FI
+* Transação: ZFIR008
+* Descrição: Relatório de Cheques por Cliente
+* Autor....: Douglas Gomes   (Consultoria Avannt)
+* Data.....: 17/09/2012
+*
+*                          [HISTÓRICO]
+* ========== ============  ==========  =================================
+*    Data        Autor      Request                Descrição
+* ========== ============  ==========  =================================
+*-----------------------------------------------------------------------
+
+REPORT  ydesafio_bh MESSAGE-ID zsdmsg.
+
+INCLUDE: ydesafio_bh_in_scr,
+         ydesafio_bh_in_model,
+         ydesafio_bh_in_view,
+         ydesafio_bh_in_controller.
+
+DATA: gc_controller TYPE REF TO report_controller.
+
+INITIALIZATION.
+  CREATE OBJECT gc_controller.
+  gc_controller->initialization( ).
+
+AT SELECTION-SCREEN OUTPUT.
+  gc_controller->selection_screen_o( ).
+
+AT SELECTION-SCREEN.
+  gc_controller->selection_screen( ).
+
+START-OF-SELECTION.
+  gc_controller->start_of_selection( ).
+
+END-OF-SELECTION.
+  gc_controller->end_of_selection( ).

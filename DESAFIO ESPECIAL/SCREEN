@@ -1,0 +1,21 @@
+*&---------------------------------------------------------------------*
+*&  Include           YDESAFIO_BH_IN_SCR
+*&---------------------------------------------------------------------*
+
+TABLES: kna1, tcj_documents, tcj_positions, zfit004.
+
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
+  PARAMETERS:     p_bukrs TYPE tcj_documents-comp_code OBLIGATORY.
+
+  SELECT-OPTIONS: s_bzdat FOR tcj_positions-bzdat,
+                  s_postg FOR tcj_positions-posting_date,
+                  s_kunnr FOR kna1-kunnr.
+SELECTION-SCREEN END OF BLOCK b1.
+
+SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE TEXT-025.
+
+  PARAMETERS: p_todos RADIOBUTTON GROUP tip DEFAULT 'X',
+              p_compe RADIOBUTTON GROUP tip,
+              p_abert RADIOBUTTON GROUP tip.
+
+SELECTION-SCREEN END OF BLOCK b2.

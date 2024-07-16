@@ -1,0 +1,533 @@
+*&---------------------------------------------------------------------*
+*&  Include           YDESAFIO_BH_IN_MODEL
+*&---------------------------------------------------------------------*
+
+CLASS report_model DEFINITION.
+
+  PUBLIC SECTION.
+
+    TYPE-POOLS: slis.
+
+    TYPES:
+      BEGIN OF ty_saida,
+        checkbox        TYPE char10,
+        comp_code       TYPE tcj_documents-comp_code,
+        cajo_number     TYPE tcj_documents-cajo_number,
+        cajo_name       TYPE tcj_cj_names-cajo_name,
+        check_number    TYPE iscj_cr_postings-check_number,
+        check_issuer    TYPE iscj_cr_postings-check_issuer,
+        bank_key        TYPE iscj_cr_postings-bank_key,
+        bank_acct       TYPE iscj_cr_postings-bank_acct,
+        position_text   TYPE tcj_positions-position_text,
+        document_date   TYPE iscj_cr_postings-document_date, " Data no documento
+        posting_date    TYPE iscj_cr_postings-posting_date,  " Data de lançamento no documento
+        bzdat           TYPE tcj_positions-bzdat,
+        cjamount        TYPE iscj_cr_postings-h_receipts,
+        kunnr           TYPE kna1-kunnr,
+        name1           TYPE kna1-name1,
+        document_number TYPE iscj_cr_postings-document_number,
+        alloc_nmbr      TYPE iscj_cr_postings-alloc_nmbr,
+        conta_deb       TYPE bseg-hkont,
+        conta_cre       TYPE bseg-hkont,
+        status_fb50(5)  TYPE c,
+        n_doc_criado    TYPE bkpf-belnr,
+      END OF ty_saida,
+
+      BEGIN OF ty_tcj_documents,
+        comp_code        TYPE  tcj_documents-comp_code,
+        cajo_number      TYPE  tcj_documents-cajo_number,
+        fisc_year        TYPE  tcj_documents-fisc_year,
+        posting_number   TYPE  tcj_documents-posting_number,
+        h_receipts       TYPE  tcj_documents-h_receipts,
+        h_payments       TYPE  tcj_documents-h_payments,
+        h_net_amount     TYPE  tcj_documents-h_net_amount,
+        h_net_payment_wt TYPE  tcj_documents-h_net_payment_wt,
+        h_tax_amount     TYPE  tcj_documents-h_tax_amount,
+        document_date    TYPE  tcj_documents-document_date,
+        document_number  TYPE  tcj_documents-document_number,
+        posting_date     TYPE  tcj_documents-posting_date,
+        check_number     TYPE  tcj_documents-check_number,
+        check_issuer     TYPE  tcj_documents-check_issuer,
+        bank_key         TYPE  tcj_documents-bank_key,
+        bank_acct        TYPE  tcj_documents-bank_acct,
+        check_fy         TYPE  tcj_documents-check_fy,
+        valuta_date      TYPE  tcj_documents-valuta_date,
+      END OF ty_tcj_documents,
+
+      BEGIN OF ty_tcj_check_stacks,
+        comp_code       TYPE  tcj_check_stacks-comp_code,
+        cajo_number     TYPE  tcj_check_stacks-cajo_number,
+        fisc_year       TYPE  tcj_check_stacks-fisc_year,
+        check_stack     TYPE  tcj_check_stacks-check_stack,
+        transact_number TYPE  tcj_check_stacks-transact_number,
+        posting_date    TYPE  tcj_check_stacks-posting_date,
+        valuta_date     TYPE  tcj_check_stacks-valuta_date,
+        check_status    TYPE  tcj_check_stacks-check_status,
+        gl_account      TYPE  tcj_check_stacks-gl_account,
+      END OF ty_tcj_check_stacks,
+
+      BEGIN OF ty_tcj_positions,
+        comp_code       TYPE  tcj_positions-comp_code,
+        cajo_number     TYPE  tcj_positions-cajo_number,
+        fisc_year       TYPE  tcj_positions-fisc_year,
+        posting_number  TYPE  tcj_positions-posting_number,
+        position_number TYPE  tcj_positions-position_number,
+        transact_number TYPE  tcj_positions-transact_number,
+        transact_type   TYPE  tcj_positions-transact_type,
+        posting_date    TYPE  tcj_positions-posting_date,
+        gl_account      TYPE  tcj_positions-gl_account,
+        position_text   TYPE  tcj_positions-position_text,
+        customer        TYPE  tcj_positions-customer,
+        bzdat           TYPE  tcj_positions-bzdat,
+        alloc_nmbr      TYPE  tcj_positions-alloc_nmbr,
+      END OF ty_tcj_positions,
+
+      BEGIN OF ty_kna1,
+        kunnr TYPE kna1-kunnr,
+        name1 TYPE kna1-name1,
+      END OF ty_kna1.
+
+    DATA: ti_kna1              TYPE TABLE OF ty_kna1,
+          ti_saida             TYPE TABLE OF ty_saida,
+          ti_tcj_check_stacks  TYPE TABLE OF ty_tcj_check_stacks,
+          ti_tcj_positions     TYPE TABLE OF ty_tcj_positions,
+          ti_tcj_positions_aux TYPE TABLE OF ty_tcj_positions,
+          ti_tcj_documents     TYPE TABLE OF ty_tcj_documents,
+          ti_tcj_trans_names   TYPE STANDARD TABLE OF tcj_trans_names,
+          ti_tcj_cj_names      TYPE STANDARD TABLE OF tcj_cj_names,
+
+          t_sort               TYPE slis_t_sortinfo_alv,
+          t_fieldcat           TYPE slis_t_fieldcat_alv,
+          t_exclui             TYPE slis_t_extab,
+          t_header             TYPE slis_t_listheader,
+          t_events             TYPE slis_t_event.
+
+    DATA: wa_saida             TYPE ty_saida,
+          w_zfit004            TYPE zfit004,
+          wa_tcj_check_stacks  TYPE ty_tcj_check_stacks,
+          wa_tcj_documents     TYPE ty_tcj_documents,
+          wa_tcj_positions     TYPE ty_tcj_positions,
+          wa_tcj_positions_aux TYPE ty_tcj_positions,
+          wa_kna1              TYPE ty_kna1,
+          wa_tcj_trans_names   TYPE tcj_trans_names,
+          wa_tcj_cj_names      TYPE tcj_cj_names,
+
+          w_fieldcat           TYPE slis_fieldcat_alv,
+          w_header             TYPE slis_listheader,
+          w_layout             TYPE slis_layout_alv,
+          w_print              TYPE slis_print_alv,
+          ls_grid_settings     TYPE lvc_s_glay.
+
+    DATA: r_vkgrp  TYPE RANGE OF vbak-vkgrp,
+          wr_vkgrp LIKE LINE OF r_vkgrp.
+
+    DATA: v_zlsch  TYPE c,
+          v_countz TYPE num6,
+          v_countc TYPE char6,
+          v_kunnr  TYPE kna1-kunnr,
+          v_name1  TYPE kna1-name1,
+          v_zuonr  TYPE num10,
+          v_butxt  TYPE t001-butxt.
+
+    METHODS: start_of_selection,
+             select_dados,
+             trata_dados,
+             chama_bapi,
+             data_lan,
+             user_command.
+ENDCLASS.
+
+CLASS report_model IMPLEMENTATION.
+
+  METHOD start_of_selection.
+
+    me->select_dados( ).
+    me->trata_dados( ).
+
+  ENDMETHOD.
+
+  METHOD select_dados.
+
+    SELECT kunnr name1
+      INTO TABLE ti_kna1
+      FROM kna1
+      WHERE kunnr IN s_kunnr.
+
+    IF sy-subrc EQ 0.
+
+      SELECT  comp_code       cajo_number     fisc_year
+        posting_number  position_number transact_number
+        transact_type   posting_date    gl_account
+        position_text   customer        bzdat       alloc_nmbr
+        INTO TABLE ti_tcj_positions
+        FROM tcj_positions
+        WHERE comp_code     = p_bukrs
+        AND  bzdat         IN s_bzdat
+        AND  posting_date  IN s_postg
+        AND  customer      IN s_kunnr.
+
+      IF sy-subrc EQ 0.
+
+        LOOP AT ti_tcj_positions INTO wa_tcj_positions.
+          CONDENSE wa_tcj_positions-transact_number.
+
+          IF wa_tcj_positions-transact_number = '2'.
+            MOVE-CORRESPONDING wa_tcj_positions TO wa_tcj_positions_aux.
+            APPEND wa_tcj_positions_aux TO ti_tcj_positions_aux.
+          ENDIF.
+
+        ENDLOOP.
+
+        CLEAR: ti_tcj_positions, wa_tcj_positions.
+
+        SELECT *
+          INTO TABLE ti_tcj_cj_names
+          FROM tcj_cj_names
+          FOR ALL ENTRIES IN ti_tcj_positions_aux
+          WHERE comp_code = ti_tcj_positions_aux-comp_code
+          AND cajo_number = ti_tcj_positions_aux-cajo_number
+          AND langu = 'PT'.
+
+        IF sy-subrc EQ 0.
+
+          SELECT comp_code      cajo_number       fisc_year           posting_number  h_receipts      h_payments
+            h_net_amount   h_net_payment_wt  h_tax_amount        document_date   document_number
+            posting_date   check_number      check_issuer        bank_key        bank_acct
+            check_fy       valuta_date
+            INTO TABLE ti_tcj_documents
+            FROM tcj_documents
+            FOR ALL ENTRIES IN ti_tcj_positions_aux
+            WHERE comp_code       = ti_tcj_positions_aux-comp_code
+            AND   cajo_number     = ti_tcj_positions_aux-cajo_number
+            AND   fisc_year       = ti_tcj_positions_aux-fisc_year
+            AND   posting_number  = ti_tcj_positions_aux-posting_number
+            AND   revbelnr        = space.
+
+          IF sy-subrc <> '0'.
+            MESSAGE s000 WITH text-002 DISPLAY LIKE 'E'.
+          ENDIF.
+
+        ENDIF.
+      ELSE.
+        MESSAGE s000 WITH text-002 DISPLAY LIKE 'E'.
+      ENDIF.
+    ELSE.
+      MESSAGE s000 WITH text-002 DISPLAY LIKE 'E'.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD trata_dados.
+
+    SORT:
+      ti_kna1               BY kunnr,
+      ti_tcj_cj_names       BY comp_code cajo_number cajo_name,
+      ti_tcj_documents      BY comp_code cajo_number fisc_year posting_number,
+      ti_tcj_positions_aux  BY comp_code cajo_number fisc_year posting_number.
+
+    REFRESH:  ti_saida.
+    CLEAR:    wa_saida.
+
+    LOOP AT ti_tcj_documents INTO wa_tcj_documents.
+
+      ADD 1 TO v_countz.
+
+      MOVE-CORRESPONDING wa_tcj_documents TO wa_saida.
+      wa_saida-cjamount = wa_tcj_documents-h_receipts.
+
+      READ TABLE ti_tcj_positions_aux INTO wa_tcj_positions_aux WITH KEY comp_code      = wa_tcj_documents-comp_code
+                                                                         cajo_number    = wa_tcj_documents-cajo_number
+                                                                         fisc_year      = wa_tcj_documents-fisc_year
+                                                                         posting_number = wa_tcj_documents-posting_number BINARY SEARCH.
+      IF sy-subrc EQ 0.
+        wa_saida-kunnr          = wa_tcj_positions_aux-customer.
+        wa_saida-alloc_nmbr     = wa_tcj_positions_aux-alloc_nmbr.
+        wa_saida-position_text  = wa_tcj_positions_aux-position_text.
+        wa_saida-bzdat          = wa_tcj_positions_aux-bzdat.
+      ENDIF.
+
+      READ TABLE ti_kna1 INTO wa_kna1 WITH KEY kunnr = wa_tcj_positions_aux-customer BINARY SEARCH.
+      IF sy-subrc EQ 0.
+        wa_saida-name1 = wa_kna1-name1.
+      ENDIF.
+
+      READ TABLE ti_tcj_cj_names INTO wa_tcj_cj_names WITH KEY comp_code      = wa_tcj_documents-comp_code
+      cajo_number    = wa_tcj_documents-cajo_number
+      langu          = 'P' BINARY SEARCH.
+      IF sy-subrc EQ 0.
+        wa_saida-cajo_name = wa_tcj_cj_names-cajo_name.
+      ENDIF.
+
+      wa_saida-document_number = wa_tcj_documents-posting_number.
+
+      "Solicitação do Rafael
+      IF wa_saida-document_date BETWEEN '20120701' AND '20131231'.
+        wa_saida-status_fb50 = 'OK'.
+      ENDIF.
+      IF p_todos EQ 'X'.
+
+        SELECT SINGLE * FROM zfit004
+          INTO w_zfit004
+          WHERE document_number = wa_saida-document_number
+          AND check_number = wa_saida-check_number.
+
+        IF sy-subrc IS INITIAL.
+
+          wa_saida-status_fb50 = 'OK'.
+          wa_saida-n_doc_criado = w_zfit004-check_number.
+          wa_saida-conta_cre = w_zfit004-conta_cred.
+          wa_saida-conta_deb = w_zfit004-conta_deb.
+
+        ELSE.
+          wa_saida-conta_cre = '0011101998'.
+        ENDIF.
+
+        APPEND wa_saida TO ti_saida.
+        CLEAR: wa_saida, w_zfit004.
+
+      ELSEIF p_compe EQ 'X'.
+
+        SELECT SINGLE * FROM zfit004
+          INTO w_zfit004
+          WHERE document_number = wa_saida-document_number AND
+          check_number = wa_saida-check_number.
+
+        IF sy-subrc IS INITIAL.
+
+          wa_saida-status_fb50 = 'OK'.
+          wa_saida-n_doc_criado = w_zfit004-check_number.
+          wa_saida-conta_cre = w_zfit004-conta_cred.
+          wa_saida-conta_deb = w_zfit004-conta_deb.
+          APPEND wa_saida TO ti_saida.
+          CLEAR: wa_saida, w_zfit004.
+        ENDIF.
+
+      ELSEIF p_abert EQ 'X'.
+
+        SELECT SINGLE * FROM zfit004
+          INTO w_zfit004
+          WHERE document_number = wa_saida-document_number AND
+          check_number = wa_saida-check_number.
+
+        IF ( sy-subrc IS NOT INITIAL ) AND NOT
+        ( wa_saida-document_date BETWEEN '20120701' AND '20131231').
+
+          wa_saida-conta_cre = '0011101998'.
+          APPEND wa_saida TO ti_saida.
+          CLEAR: wa_saida, w_zfit004.
+        ENDIF.
+
+      ENDIF.
+
+    ENDLOOP.
+
+    MOVE v_countz TO v_countc.
+    CONDENSE v_countc.
+
+  ENDMETHOD.
+
+  METHOD user_command.
+
+    DATA: r_ucomm     LIKE sy-ucomm,
+          rs_selfield TYPE slis_selfield.
+    CASE r_ucomm.
+      WHEN 'BAPI'.
+
+        me->chama_bapi( ).
+        rs_selfield-refresh = 'X'.
+
+      WHEN 'DATA_LAN'.
+
+        me->data_lan( ).
+        rs_selfield-refresh = 'X'.
+
+      WHEN 'CTA_DEB'.
+
+    ENDCASE.
+
+  ENDMETHOD.
+
+  METHOD chama_bapi.
+
+    DATA: w_header  TYPE bapiache08,
+          t_account TYPE TABLE OF bapiacgl08,
+          w_account TYPE bapiacgl08,
+          t_current TYPE TABLE OF bapiaccr08,
+          w_current TYPE bapiaccr08,
+          t_return  TYPE TABLE OF bapiret2,
+          v_type    TYPE bapiache02-obj_type,
+          v_key     TYPE bapiache02-obj_key,
+          v_sys     TYPE bapiache02-obj_sys,
+          i_tabix   TYPE i,
+          t_zfit004 TYPE TABLE OF zfit004.
+
+    CLEAR: w_header, w_account, w_current.
+    REFRESH: t_account, t_current.
+
+    DATA: v_exit TYPE c.
+
+    CLEAR: v_exit.
+
+    LOOP AT ti_saida INTO wa_saida WHERE checkbox = 'X' AND conta_deb IS NOT INITIAL AND conta_cre IS NOT INITIAL.
+
+      IF wa_saida-conta_deb = wa_saida-conta_cre.
+        MESSAGE 'Conta de débito deve ser diferente da conta de crédito.' TYPE 'I'.
+        v_exit = 'X'.
+        EXIT.
+      ENDIF.
+
+      i_tabix = sy-tabix.
+
+      CLEAR: w_header, w_account, w_current.
+      REFRESH: t_account, t_current.
+      CLEAR: v_type, v_key, v_sys.
+      REFRESH t_return.
+
+      w_header-username = sy-uname.
+      w_header-header_txt = 'pagamento de cheque'.
+      w_header-comp_code = wa_saida-comp_code.
+      w_header-fisc_year = wa_saida-posting_date(4).
+      w_header-pstng_date = wa_saida-posting_date.
+      w_header-doc_date = wa_saida-bzdat.
+      w_header-doc_type = 'sa'.
+
+      w_account-itemno_acc = '0000000001'.
+      w_account-gl_account = wa_saida-conta_deb.
+      w_account-comp_code =   wa_saida-comp_code.
+      w_account-pstng_date = wa_saida-posting_date.
+      w_account-doc_type = 'SA'.
+      w_account-fisc_year = wa_saida-posting_date(4).
+      w_account-item_text = wa_saida-check_issuer.
+      w_account-alloc_nmbr = wa_saida-check_number.
+      APPEND w_account TO t_account.
+
+      CLEAR w_account.
+
+      w_account-itemno_acc = '0000000002'.
+      w_account-gl_account = wa_saida-conta_cre.
+      w_account-comp_code = wa_saida-comp_code.
+      w_account-pstng_date = wa_saida-posting_date.
+      w_account-doc_type = 'SA'.
+      w_account-fisc_year = wa_saida-posting_date(4).
+      w_account-item_text = wa_saida-check_issuer.
+      w_account-alloc_nmbr = wa_saida-check_number.
+      APPEND w_account TO t_account.
+
+      CLEAR w_account.
+
+      w_current-itemno_acc = '0000000001'.
+      w_current-currency = 'BRL'.
+      w_current-amt_doccur = wa_saida-cjamount.
+      APPEND w_current TO t_current.
+
+      CLEAR w_current.
+
+      w_current-itemno_acc = '0000000002'.
+      w_current-currency = 'BRL'.
+      w_current-amt_doccur = ( wa_saida-cjamount * -1 ).
+      APPEND w_current TO t_current.
+
+      CLEAR w_current.
+
+      CALL FUNCTION 'BAPI_ACC_GL_POSTING_POST'
+        EXPORTING
+          documentheader = w_header
+        IMPORTING
+          obj_type       = v_type
+          obj_key        = v_key
+          obj_sys        = v_sys
+        TABLES
+          accountgl      = t_account
+          currencyamount = t_current
+          return         = t_return.
+
+      IF v_key IS NOT INITIAL AND v_key <> '$' .
+
+        CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+          EXPORTING
+            wait = 'X'.
+
+        wa_saida-status_fb50 = 'OK'.
+        wa_saida-n_doc_criado = v_key(10).
+
+        w_zfit004-document_number = wa_saida-document_number.
+        w_zfit004-check_number = wa_saida-check_number.
+        w_zfit004-belnr = wa_saida-n_doc_criado.
+        w_zfit004-conta_cred = wa_saida-conta_cre.
+        w_zfit004-conta_deb = wa_saida-conta_deb.
+
+        APPEND w_zfit004 TO t_zfit004.
+        CLEAR w_zfit004.
+
+      ELSE.
+
+        wa_saida-status_fb50 = 'ERRO'.
+
+      ENDIF.
+
+      MODIFY ti_saida FROM wa_saida INDEX i_tabix.
+
+    ENDLOOP.
+
+    IF v_exit IS NOT INITIAL.
+      EXIT.
+    ENDIF.
+
+*  INSERT zfit004 FROM TABLE t_zfit004.
+    MODIFY zfit004 FROM TABLE t_zfit004.
+    IF sy-subrc = 0.
+      COMMIT WORK.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD data_lan.
+
+    DATA: lv_budat TYPE bkpf-budat.
+    DATA: lv_hkont TYPE bseg-hkont.
+
+    DATA: lv_return.
+    DATA: lt_fields TYPE TABLE OF sval,
+          st_fields TYPE sval.
+
+    st_fields-tabname = 'BKPF'.
+    st_fields-fieldname = 'BUDAT'.
+    st_fields-fieldtext = 'Data de Lançamento'.
+    st_fields-value = sy-datum.
+    APPEND st_fields TO lt_fields.
+
+    st_fields-tabname = 'BSEG'.
+    st_fields-fieldname = 'HKONT'.
+    st_fields-fieldtext = 'Conta Débito'.
+    CLEAR st_fields-value.
+    APPEND st_fields TO lt_fields.
+
+    CALL FUNCTION 'POPUP_GET_VALUES'
+      EXPORTING
+        popup_title = 'Data de Lançamento e Conta Débito'
+      IMPORTING
+        returncode  = lv_return
+      TABLES
+        fields      = lt_fields.
+
+    IF lv_return IS INITIAL.
+      LOOP AT lt_fields INTO st_fields.
+        IF st_fields-fieldname EQ 'BUDAT'.
+          lv_budat = st_fields-value.
+        ELSEIF st_fields-fieldname EQ 'HKONT'.
+          lv_hkont = st_fields-value.
+        ENDIF.
+      ENDLOOP.
+      LOOP AT ti_saida INTO wa_saida WHERE checkbox = 'X'.
+        IF lv_budat IS NOT INITIAL.
+          wa_saida-posting_date = lv_budat.
+        ENDIF.
+        IF lv_hkont IS NOT INITIAL.
+          wa_saida-conta_deb = lv_hkont.
+        ENDIF.
+        MODIFY ti_saida FROM wa_saida INDEX sy-tabix.
+      ENDLOOP.
+    ENDIF.
+
+  ENDMETHOD.
+ENDCLASS.

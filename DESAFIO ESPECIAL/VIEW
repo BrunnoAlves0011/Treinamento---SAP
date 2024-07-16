@@ -1,0 +1,802 @@
+*&---------------------------------------------------------------------*
+*&  Include           YDESAFIO_BH_IN_VIEW
+*&---------------------------------------------------------------------*
+
+CLASS report_view DEFINITION.
+
+  PUBLIC SECTION.
+
+    CONSTANTS:
+        c_a    TYPE char1   VALUE 'A',
+        c_i    TYPE char1   VALUE 'I',
+        c_x    TYPE char1   VALUE 'X',
+        c_logo TYPE bds_typeid  VALUE 'ZLOGO_CACOLA_344_125'. " Logomarca Caçola
+
+    METHODS: end_of_selection IMPORTING model TYPE REF TO report_model,
+             monta_relatorio  IMPORTING model TYPE REF TO report_model,
+             monta_fieldcat   IMPORTING model TYPE REF TO report_model,
+             preenche_fieldcat
+                  IMPORTING model          TYPE REF TO report_model
+                            p_fieldname    TYPE string "1
+                            p_reptext_ddic TYPE string "2
+                            p_no_zero      TYPE char2  "3
+                            p_no_out       TYPE char2  "4
+                            p_edit         TYPE char2  "5
+                            p_checkbox     TYPE char2  "6
+                            p_hotspot      TYPE char2  "7
+                            p_datatype     TYPE char4  "8
+                            p_inttype      TYPE c      "9
+                            p_intlen       TYPE string "10
+                            p_do_sum       TYPE c,     "11
+             ordena_lista,
+             carrega_layout   IMPORTING model TYPE REF TO report_model,
+             carrega_print    IMPORTING model TYPE REF TO report_model,
+             eventos_alv      IMPORTING model TYPE REF TO report_model,
+             exibe_relatorio  IMPORTING model TYPE REF TO report_model,
+             print_header     IMPORTING model TYPE REF TO report_model,
+             set_status.
+
+ENDCLASS.
+
+CLASS report_view IMPLEMENTATION.
+
+  METHOD end_of_selection.
+
+    IF model->ti_saida[] IS NOT INITIAL.
+      me->monta_relatorio( model ).
+    ELSE.
+      MESSAGE s000 WITH text-002 DISPLAY LIKE 'E'.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD monta_relatorio.
+
+    me->monta_fieldcat( model ).
+    me->ordena_lista( ).
+    me->carrega_layout( model ).
+    me->carrega_print( model ).
+    me->eventos_alv( model ).
+*   me->exclusao_botao( ).
+    me->exibe_relatorio( model ).
+
+  ENDMETHOD.
+
+  METHOD monta_fieldcat.
+
+    DATA: p_fieldname    TYPE string,      "1
+          p_reptext_ddic TYPE string,      "2
+          p_no_zero      TYPE c LENGTH 2,  "3
+          p_no_out       TYPE c LENGTH 2,  "4
+          p_edit         TYPE c LENGTH 2,  "5
+          p_checkbox     TYPE c LENGTH 2,  "6
+          p_hotspot      TYPE c LENGTH 2,  "7
+          p_datatype     TYPE c LENGTH 4,  "8
+          p_inttype      TYPE c,           "9
+          p_intlen       TYPE string,      "10
+          p_do_sum       TYPE c.           "11
+
+
+**       1                 2      3    4    5    6    7    8     9   10  11
+*    'CAJO_NUMBER'     text-020  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '04' '',
+    p_fieldname    = 'CAJO_NUMBER'.
+    p_reptext_ddic = text-020.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'CHAR'.
+    p_inttype      = 'C'.
+    p_intlen       = '04'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'CAJO_NAME'       text-016  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '04' '',
+    p_fieldname    = 'CAJO_NAME'.
+    p_reptext_ddic = text-016.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'CHAR'.
+    p_inttype      = 'C'.
+    p_intlen       = '04'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'KUNNR'           text-014  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '10' '',
+    p_fieldname    = 'KUNNR'.
+    p_reptext_ddic = text-014.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'CHAR'.
+    p_inttype      = 'C'.
+    p_intlen       = '10'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'NAME1'           text-013  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '35' '',
+    p_fieldname    = 'NAME1'.
+    p_reptext_ddic = text-013.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'CHAR'.
+    p_inttype      = 'C'.
+    p_intlen       = '35'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'CHECK_NUMBER'    text-015  ' '  ' '  ' '  ' '  ' ' 'NUMC' 'N' '13' '',
+    p_fieldname    = 'CHECK_NUMBER'.
+    p_reptext_ddic = text-015.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'NUMC'.
+    p_inttype      = 'N'.
+    p_intlen       = '13'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'CHECK_ISSUER'    text-004  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '14' '',
+    p_fieldname    = 'CHECK_ISSUER'.
+    p_reptext_ddic = text-004.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'CHAR'.
+    p_inttype      = 'C'.
+    p_intlen       = '14'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'BANK_KEY'        text-005  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '15' '',
+    p_fieldname    = 'BANK_KEY'.
+    p_reptext_ddic = text-005.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'CHAR'.
+    p_inttype      = 'C'.
+    p_intlen       = '15'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'BANK_ACCT'       text-012  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '18' '',
+    p_fieldname    = 'BANK_ACCT'.
+    p_reptext_ddic = text-012.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'CHAR'.
+    p_inttype      = 'C'.
+    p_intlen       = '18'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'POSITION_TEXT'   text-018  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '50' '',
+    p_fieldname    = 'POSITION_TEXT'.
+    p_reptext_ddic = text-018.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'CHAR'.
+    p_inttype      = 'C'.
+    p_intlen       = '50'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'DOCUMENT_DATE'   text-006  ' '  ' '  ' '  ' '  ' ' 'DATS' 'D' '08' '',
+    p_fieldname    = 'DOCUMENT_DATE'.
+    p_reptext_ddic = text-006.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'DATS'.
+    p_inttype      = 'D'.
+    p_intlen       = '08'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'POSTING_DATE'    text-007  ' '  ' '  'X'  ' '  ' ' 'DATS' 'D' '08' '',
+    p_fieldname    = 'POSTING_DATE'.
+    p_reptext_ddic = text-007.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = 'X'.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'DATS'.
+    p_inttype      = 'D'.
+    p_intlen       = '08'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'BZDAT'           text-017  ' '  ' '  'X'  ' '  ' ' 'DATS' 'D' '08' '',
+    p_fieldname    = 'BZDAT'.
+    p_reptext_ddic = text-017.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = 'X'.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'DATS'.
+    p_inttype      = 'D'.
+    p_intlen       = '08'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'CJAMOUNT'        text-008  ' '  ' '  ' '  ' '  ' ' 'CURR' '' '13' 'X',
+    p_fieldname    = 'CJAMOUNT'.
+    p_reptext_ddic = text-008.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'CURR'.
+    p_inttype      = ''.
+    p_intlen       = '13'.
+    p_do_sum       = 'X'.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'DOCUMENT_NUMBER' text-009  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '16' '',
+    p_fieldname    = 'DOCUMENT_NUMBER'.
+    p_reptext_ddic = text-009.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'CHAR'.
+    p_inttype      = 'C'.
+    p_intlen       = '16'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'ALLOC_NMBR'      text-010  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '18' '',
+    p_fieldname    = 'ALLOC_NMBR'.
+    p_reptext_ddic = text-010.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'CHAR'.
+    p_inttype      = 'C'.
+    p_intlen       = '18'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'CONTA_DEB'       text-022  ' '  ' '  'X'  ' '  ' ' 'NUMC' 'N' '13' '',
+    p_fieldname    = 'CONTA_DEB'.
+    p_reptext_ddic = text-022.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = 'X'.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'NUMC'.
+    p_inttype      = 'N'.
+    p_intlen       = '13'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'CONTA_CRE'       text-021  ' '  ' '  'X'  ' '  ' ' 'NUMC' 'N' '13' '',
+    p_fieldname    = 'CONTA_CRE'.
+    p_reptext_ddic = text-021.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = 'X'.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'NUMC'.
+    p_inttype      = 'N'.
+    p_intlen       = '13'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'STATUS_FB50'     text-023  ' '  ' '  ''   ' '  ' ' 'CHAR' 'C' '05' '',
+    p_fieldname    = 'STATUS_FB50'.
+    p_reptext_ddic = text-023.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'CHAR'.
+    p_inttype      = 'C'.
+    p_intlen       = '05'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+*    'N_DOC_CRIADO'    text-024  ' '  ' '  ''   ' '  ' ' 'CHAR' 'C' '10' ''.
+    p_fieldname    = 'N_DOC_CRIADO'.
+    p_reptext_ddic = text-024.
+    p_no_zero      = ''.
+    p_no_out       = ''.
+    p_edit         = ''.
+    p_checkbox     = ''.
+    p_hotspot      = ''.
+    p_datatype     = 'CHAR'.
+    p_inttype      = 'C'.
+    p_intlen       = '10'.
+    p_do_sum       = ''.
+    me->preenche_fieldcat(
+      EXPORTING
+        model = model
+        p_fieldname    = p_fieldname
+        p_reptext_ddic = p_reptext_ddic
+        p_no_zero      = p_no_zero
+        p_no_out       = p_no_out
+        p_edit         = p_edit
+        p_checkbox     = p_checkbox
+        p_hotspot      = p_hotspot
+        p_datatype     = p_datatype
+        p_inttype      = p_inttype
+        p_intlen       = p_intlen
+        p_do_sum       = p_do_sum  ).
+
+  ENDMETHOD.
+
+  METHOD preenche_fieldcat.
+    CLEAR model->w_fieldcat.
+
+    model->w_fieldcat-fieldname     = p_fieldname.
+    model->w_fieldcat-tabname       = 'TI_SAIDA'.
+    model->w_fieldcat-reptext_ddic  = p_reptext_ddic.
+
+    CASE model->w_fieldcat-fieldname.
+      WHEN 'CAJO_NUMBER' OR 'CAJO_NAME' OR 'KUNNR'.
+        model->w_fieldcat-fix_column    = c_x.
+    ENDCASE.
+
+    model->w_fieldcat-no_zero       = p_no_zero.
+    model->w_fieldcat-no_out        = p_no_out.
+    model->w_fieldcat-edit          = p_edit.
+    model->w_fieldcat-checkbox      = p_checkbox.
+    model->w_fieldcat-hotspot       = p_hotspot.
+    model->w_fieldcat-datatype      = p_datatype.
+    model->w_fieldcat-inttype       = p_inttype.
+    model->w_fieldcat-intlen        = p_intlen.
+    model->w_fieldcat-do_sum        = p_do_sum.
+
+    APPEND model->w_fieldcat TO model->t_fieldcat.
+  ENDMETHOD.
+
+  METHOD ordena_lista.
+
+*  DATA: l_sort TYPE slis_sortinfo_alv.
+*
+*  CLEAR: l_sort, t_sort.
+*
+**** Montar estrutura
+**  l_sort-spos      = 1.           " Sequência de ordenação
+**  l_sort-fieldname = 'KUNNR'.     " Nome do campo
+**  l_sort-tabname   = 'TI_SAIDA'.   " Nome da tabela de lista
+**  l_sort-up        = 'X'.         " Ordenação Crescente
+**  l_sort-expa      = 'X'.         " Expandir lista
+***  l_sort-group     = 'KUNNR'.     " Mudança de controle: quebra de página, inserir sublinha
+**  l_sort-subtot   = 'X'.          " Subtotal
+**  APPEND l_sort TO t_sort.
+
+  ENDMETHOD.
+
+  METHOD carrega_layout.
+
+    CLEAR: model->w_layout.
+
+    model->w_layout-box_fieldname = 'CHECKBOX'.
+    model->w_layout-group_change_edit = c_x.
+    model->w_layout-zebra             = c_x.
+    model->w_layout-colwidth_optimize = c_x.
+
+  ENDMETHOD.
+
+  METHOD carrega_print.
+
+    CLEAR: model->w_print.
+    model->w_print-no_print_selinfos  = c_x.   " Não listar info. sobre seleção
+    model->w_print-no_coverpage       = c_x.   " Não listar página de rosto
+    model->w_print-no_print_listinfos = c_x.   " Não listar info. sobre a lista
+
+  ENDMETHOD.
+
+  METHOD eventos_alv.
+
+    CLEAR: model->t_events.
+
+    FIELD-SYMBOLS: <f_events> TYPE slis_alv_event.
+    UNASSIGN: <f_events>.
+
+    CALL FUNCTION 'REUSE_ALV_EVENTS_GET'
+*    EXPORTING
+*      i_list_type = 0
+    IMPORTING
+      et_events   = model->t_events.
+
+    IF sy-subrc EQ 0.
+      READ TABLE model->t_events WITH KEY name = slis_ev_top_of_page
+                                                 ASSIGNING <f_events>.
+
+      IF sy-subrc EQ 0.
+        me->print_header( model ).
+      ENDIF.
+
+      READ TABLE model->t_events WITH KEY name = slis_ev_pf_status_set
+                                                 ASSIGNING <f_events>.
+
+      IF sy-subrc EQ 0.
+        me->set_status( ).
+      ENDIF.
+
+      READ TABLE model->t_events WITH KEY name = slis_ev_user_command
+                                                 ASSIGNING <f_events>.
+
+      IF sy-subrc EQ 0.
+        model->user_command( ).
+      ENDIF.
+
+
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD exibe_relatorio.
+
+    DATA: l_repid TYPE sy-repid.
+
+    CLEAR: l_repid.
+
+    l_repid = sy-repid.
+
+    model->ls_grid_settings-edt_cll_cb = 'X'.
+
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      i_callback_program     = l_repid
+      i_callback_top_of_page = 'TOP_OF_PAGE'
+      is_layout              = model->w_layout
+      it_fieldcat            = model->t_fieldcat
+      it_sort                = model->t_sort
+      i_save                 = c_a
+      it_events              = model->t_events
+      is_print               = model->w_print
+      i_grid_settings        = model->ls_grid_settings
+    TABLES
+      t_outtab               = model->ti_saida
+    EXCEPTIONS
+      program_error          = 1
+      OTHERS                 = 2.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD print_header.
+
+    DATA: l_dtde        TYPE char12,
+          l_dtem        TYPE char30,
+          l_mandt       TYPE char10,
+          l_dtate       TYPE char12,
+          l_totreg(10)  TYPE c,
+          l_dtmaior     TYPE bsid-zfbdt,
+          l_dtmaiorlt   TYPE char10,
+          l_dtmenorlt   TYPE char10,
+          l_dtmenor     TYPE bsid-zfbdt.
+
+  REFRESH: model->t_header.
+  CLEAR: model->w_header, l_dtde, l_dtem, l_mandt, l_dtate.
+
+* Nome Do Relatório
+  CLEAR model->w_header.
+  model->w_header-typ = 'H'.
+  CONCATENATE sy-title '-' sy-mandt INTO model->w_header-info SEPARATED BY space.
+  APPEND model->w_header TO model->t_header.
+
+* Empresa
+  CLEAR model->w_header.
+  model->w_header-typ = 'S'.
+  model->w_header-key = 'Empresa:'.
+  CONCATENATE p_bukrs '.' INTO model->w_header-info SEPARATED BY space.
+  APPEND model->w_header TO model->t_header.
+
+* Data Lançamento
+  CLEAR model->w_header.
+  model->w_header-typ = 'S'.
+  model->w_header-key = 'Data documento:'.
+
+
+* Data de Emissão:
+  CONCATENATE sy-datum+6(2) '.' sy-datum+4(2) '.' sy-datum(4) '-'
+              sy-uzeit(2) ':' sy-uzeit+2(2) ':' sy-uzeit+4(2) INTO l_dtem.
+  CLEAR model->w_header.
+  model->w_header-typ = 'S'.
+  model->w_header-key = 'Data de Impressão:'.
+  model->w_header-info = l_dtem.
+  APPEND model->w_header TO model->t_header.
+
+* Registros:
+  l_mandt = sy-mandt.
+  CLEAR model->w_header.
+  model->w_header-typ = 'S'.
+  model->w_header-key = 'Quant.de Registros:'.
+  CONCATENATE: model->v_countc 'registros.' INTO model->w_header-info SEPARATED BY space.
+  APPEND model->w_header TO model->t_header.
+
+* Mandante:
+  l_mandt = sy-mandt.
+  CLEAR model->w_header.
+  model->w_header-typ = 'S'.
+  model->w_header-key = 'Mandante:'.
+  model->w_header-info = l_mandt.
+  APPEND model->w_header TO model->t_header.
+
+  CALL FUNCTION 'REUSE_ALV_COMMENTARY_WRITE'
+    EXPORTING
+      it_list_commentary = model->t_header
+      i_logo             = c_logo.
+
+  ENDMETHOD.
+
+  METHOD set_status.
+    SET PF-STATUS 'ZSTANDARD'.                            "#EC STAT_UNDEF
+  ENDMETHOD.
+
+ENDCLASS.
