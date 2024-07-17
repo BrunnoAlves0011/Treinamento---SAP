@@ -134,7 +134,8 @@ CLASS report_model DEFINITION.
              trata_dados,
              chama_bapi,
              data_lan,
-             user_command.
+             user_command IMPORTING r_ucomm     LIKE sy-ucomm
+                          CHANGING rs_selfield  TYPE slis_selfield.
 ENDCLASS.
 
 CLASS report_model IMPLEMENTATION.
@@ -321,15 +322,13 @@ CLASS report_model IMPLEMENTATION.
 
     ENDLOOP.
 
-    MOVE v_countz TO v_countc.
+    v_countc = v_countz.
     CONDENSE v_countc.
 
   ENDMETHOD.
 
   METHOD user_command.
 
-    DATA: r_ucomm     LIKE sy-ucomm,
-          rs_selfield TYPE slis_selfield.
     CASE r_ucomm.
       WHEN 'BAPI'.
 

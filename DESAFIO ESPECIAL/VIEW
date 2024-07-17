@@ -28,13 +28,12 @@ CLASS report_view DEFINITION.
                             p_inttype      TYPE c      "9
                             p_intlen       TYPE string "10
                             p_do_sum       TYPE c,     "11
-             ordena_lista,
+             ordena_lista     IMPORTING model TYPE REF TO report_model,
              carrega_layout   IMPORTING model TYPE REF TO report_model,
              carrega_print    IMPORTING model TYPE REF TO report_model,
              eventos_alv      IMPORTING model TYPE REF TO report_model,
              exibe_relatorio  IMPORTING model TYPE REF TO report_model,
-             print_header     IMPORTING model TYPE REF TO report_model,
-             set_status.
+             print_head       IMPORTING model TYPE REF TO report_model.
 
 ENDCLASS.
 
@@ -53,7 +52,7 @@ CLASS report_view IMPLEMENTATION.
   METHOD monta_relatorio.
 
     me->monta_fieldcat( model ).
-    me->ordena_lista( ).
+    me->ordena_lista( model ).
     me->carrega_layout( model ).
     me->carrega_print( model ).
     me->eventos_alv( model ).
@@ -64,532 +63,331 @@ CLASS report_view IMPLEMENTATION.
 
   METHOD monta_fieldcat.
 
-    DATA: p_fieldname    TYPE string,      "1
-          p_reptext_ddic TYPE string,      "2
-          p_no_zero      TYPE c LENGTH 2,  "3
-          p_no_out       TYPE c LENGTH 2,  "4
-          p_edit         TYPE c LENGTH 2,  "5
-          p_checkbox     TYPE c LENGTH 2,  "6
-          p_hotspot      TYPE c LENGTH 2,  "7
-          p_datatype     TYPE c LENGTH 4,  "8
-          p_inttype      TYPE c,           "9
-          p_intlen       TYPE string,      "10
-          p_do_sum       TYPE c.           "11
-
+    DATA: p_reptext_ddic TYPE string.
 
 **       1                 2      3    4    5    6    7    8     9   10  11
 *    'CAJO_NUMBER'     text-020  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '04' '',
-    p_fieldname    = 'CAJO_NUMBER'.
     p_reptext_ddic = text-020.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'CHAR'.
-    p_inttype      = 'C'.
-    p_intlen       = '04'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'CAJO_NUMBER'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = ''
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'CHAR'
+        p_inttype      = 'C'
+        p_intlen       = '04'
+        p_do_sum       = ''  ).
 
 *    'CAJO_NAME'       text-016  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '04' '',
-    p_fieldname    = 'CAJO_NAME'.
     p_reptext_ddic = text-016.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'CHAR'.
-    p_inttype      = 'C'.
-    p_intlen       = '04'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'CAJO_NAME'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = ''
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'CHAR'
+        p_inttype      = 'C'
+        p_intlen       = '04'
+        p_do_sum       = '' ).
 
 *    'KUNNR'           text-014  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '10' '',
-    p_fieldname    = 'KUNNR'.
     p_reptext_ddic = text-014.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'CHAR'.
-    p_inttype      = 'C'.
-    p_intlen       = '10'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'KUNNR'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = ''
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'CHAR'
+        p_inttype      = 'C'
+        p_intlen       = '10'
+        p_do_sum       = ''  ).
 
 *    'NAME1'           text-013  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '35' '',
-    p_fieldname    = 'NAME1'.
     p_reptext_ddic = text-013.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'CHAR'.
-    p_inttype      = 'C'.
-    p_intlen       = '35'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'NAME1'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = ''
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'CHAR'
+        p_inttype      = 'C'
+        p_intlen       = '35'
+        p_do_sum       = ''  ).
 
 *    'CHECK_NUMBER'    text-015  ' '  ' '  ' '  ' '  ' ' 'NUMC' 'N' '13' '',
-    p_fieldname    = 'CHECK_NUMBER'.
     p_reptext_ddic = text-015.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'NUMC'.
-    p_inttype      = 'N'.
-    p_intlen       = '13'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'CHECK_NUMBER'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = ''
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'NUMC'
+        p_inttype      = 'N'
+        p_intlen       = '13'
+        p_do_sum       = ''  ).
 
 *    'CHECK_ISSUER'    text-004  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '14' '',
-    p_fieldname    = 'CHECK_ISSUER'.
     p_reptext_ddic = text-004.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'CHAR'.
-    p_inttype      = 'C'.
-    p_intlen       = '14'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'CHECK_ISSUER'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = ''
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'CHAR'
+        p_inttype      = 'C'
+        p_intlen       = '14'
+        p_do_sum       = ''  ).
 
 *    'BANK_KEY'        text-005  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '15' '',
-    p_fieldname    = 'BANK_KEY'.
     p_reptext_ddic = text-005.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'CHAR'.
-    p_inttype      = 'C'.
-    p_intlen       = '15'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'BANK_KEY'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = ''
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'CHAR'
+        p_inttype      = 'C'
+        p_intlen       = '15'
+        p_do_sum       = ''  ).
 
 *    'BANK_ACCT'       text-012  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '18' '',
-    p_fieldname    = 'BANK_ACCT'.
     p_reptext_ddic = text-012.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'CHAR'.
-    p_inttype      = 'C'.
-    p_intlen       = '18'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'BANK_ACCT'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = ''
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'CHAR'
+        p_inttype      = 'C'
+        p_intlen       = '18'
+        p_do_sum       = ''  ).
 
 *    'POSITION_TEXT'   text-018  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '50' '',
-    p_fieldname    = 'POSITION_TEXT'.
     p_reptext_ddic = text-018.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'CHAR'.
-    p_inttype      = 'C'.
-    p_intlen       = '50'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'POSITION_TEXT'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = ''
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'CHAR'
+        p_inttype      = 'C'
+        p_intlen       = '50'
+        p_do_sum       = ''  ).
 
 *    'DOCUMENT_DATE'   text-006  ' '  ' '  ' '  ' '  ' ' 'DATS' 'D' '08' '',
-    p_fieldname    = 'DOCUMENT_DATE'.
     p_reptext_ddic = text-006.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'DATS'.
-    p_inttype      = 'D'.
-    p_intlen       = '08'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'DOCUMENT_DATE'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = ''
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'DATS'
+        p_inttype      = 'D'
+        p_intlen       = '08'
+        p_do_sum       = ''  ).
 
 *    'POSTING_DATE'    text-007  ' '  ' '  'X'  ' '  ' ' 'DATS' 'D' '08' '',
-    p_fieldname    = 'POSTING_DATE'.
     p_reptext_ddic = text-007.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = 'X'.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'DATS'.
-    p_inttype      = 'D'.
-    p_intlen       = '08'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'POSTING_DATE'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = 'X'
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'DATS'
+        p_inttype      = 'D'
+        p_intlen       = '08'
+        p_do_sum       = ''  ).
 
 *    'BZDAT'           text-017  ' '  ' '  'X'  ' '  ' ' 'DATS' 'D' '08' '',
-    p_fieldname    = 'BZDAT'.
     p_reptext_ddic = text-017.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = 'X'.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'DATS'.
-    p_inttype      = 'D'.
-    p_intlen       = '08'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'BZDAT'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = 'X'
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'DATS'
+        p_inttype      = 'D'
+        p_intlen       = '08'
+        p_do_sum       = ''  ).
 
 *    'CJAMOUNT'        text-008  ' '  ' '  ' '  ' '  ' ' 'CURR' '' '13' 'X',
-    p_fieldname    = 'CJAMOUNT'.
     p_reptext_ddic = text-008.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'CURR'.
-    p_inttype      = ''.
-    p_intlen       = '13'.
-    p_do_sum       = 'X'.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'CJAMOUNT'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = ''
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'CURR'
+        p_inttype      = ''
+        p_intlen       = '13'
+        p_do_sum       = 'X'  ).
 
 *    'DOCUMENT_NUMBER' text-009  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '16' '',
-    p_fieldname    = 'DOCUMENT_NUMBER'.
     p_reptext_ddic = text-009.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'CHAR'.
-    p_inttype      = 'C'.
-    p_intlen       = '16'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
-        p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+         p_fieldname    = 'DOCUMENT_NUMBER'
+         p_reptext_ddic = p_reptext_ddic
+         p_no_zero      = ''
+         p_no_out       = ''
+         p_edit         = ''
+         p_checkbox     = ''
+         p_hotspot      = ''
+         p_datatype     = 'CHAR'
+         p_inttype      = 'C'
+         p_intlen       = '16'
+         p_do_sum       = ''  ).
 
 *    'ALLOC_NMBR'      text-010  ' '  ' '  ' '  ' '  ' ' 'CHAR' 'C' '18' '',
-    p_fieldname    = 'ALLOC_NMBR'.
     p_reptext_ddic = text-010.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'CHAR'.
-    p_inttype      = 'C'.
-    p_intlen       = '18'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'ALLOC_NMBR'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = ''
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'CHAR'
+        p_inttype      = 'C'
+        p_intlen       = '18'
+        p_do_sum       = ''  ).
 
 *    'CONTA_DEB'       text-022  ' '  ' '  'X'  ' '  ' ' 'NUMC' 'N' '13' '',
-    p_fieldname    = 'CONTA_DEB'.
     p_reptext_ddic = text-022.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = 'X'.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'NUMC'.
-    p_inttype      = 'N'.
-    p_intlen       = '13'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'CONTA_DEB'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = 'X'
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'NUMC'
+        p_inttype      = 'N'
+        p_intlen       = '13'
+        p_do_sum       = ''  ).
 
 *    'CONTA_CRE'       text-021  ' '  ' '  'X'  ' '  ' ' 'NUMC' 'N' '13' '',
-    p_fieldname    = 'CONTA_CRE'.
     p_reptext_ddic = text-021.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = 'X'.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'NUMC'.
-    p_inttype      = 'N'.
-    p_intlen       = '13'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'CONTA_CRE'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = 'X'
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'NUMC'
+        p_inttype      = 'N'
+        p_intlen       = '13'
+        p_do_sum       = ''  ).
 
 *    'STATUS_FB50'     text-023  ' '  ' '  ''   ' '  ' ' 'CHAR' 'C' '05' '',
-    p_fieldname    = 'STATUS_FB50'.
     p_reptext_ddic = text-023.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'CHAR'.
-    p_inttype      = 'C'.
-    p_intlen       = '05'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
-        p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+         p_fieldname    = 'STATUS_FB50'
+         p_reptext_ddic = p_reptext_ddic
+         p_no_zero      = ''
+         p_no_out       = ''
+         p_edit         = ''
+         p_checkbox     = ''
+         p_hotspot      = ''
+         p_datatype     = 'CHAR'
+         p_inttype      = 'C'
+         p_intlen       = '05'
+         p_do_sum       = '' ).
 
 *    'N_DOC_CRIADO'    text-024  ' '  ' '  ''   ' '  ' ' 'CHAR' 'C' '10' ''.
-    p_fieldname    = 'N_DOC_CRIADO'.
     p_reptext_ddic = text-024.
-    p_no_zero      = ''.
-    p_no_out       = ''.
-    p_edit         = ''.
-    p_checkbox     = ''.
-    p_hotspot      = ''.
-    p_datatype     = 'CHAR'.
-    p_inttype      = 'C'.
-    p_intlen       = '10'.
-    p_do_sum       = ''.
     me->preenche_fieldcat(
       EXPORTING
         model = model
-        p_fieldname    = p_fieldname
+        p_fieldname    = 'N_DOC_CRIADO'
         p_reptext_ddic = p_reptext_ddic
-        p_no_zero      = p_no_zero
-        p_no_out       = p_no_out
-        p_edit         = p_edit
-        p_checkbox     = p_checkbox
-        p_hotspot      = p_hotspot
-        p_datatype     = p_datatype
-        p_inttype      = p_inttype
-        p_intlen       = p_intlen
-        p_do_sum       = p_do_sum  ).
+        p_no_zero      = ''
+        p_no_out       = ''
+        p_edit         = ''
+        p_checkbox     = ''
+        p_hotspot      = ''
+        p_datatype     = 'CHAR'
+        p_inttype      = 'C'
+        p_intlen       = '10'
+        p_do_sum       = ''  ).
 
   ENDMETHOD.
 
@@ -622,7 +420,7 @@ CLASS report_view IMPLEMENTATION.
 
 *  DATA: l_sort TYPE slis_sortinfo_alv.
 *
-*  CLEAR: l_sort, t_sort.
+*  CLEAR: l_sort, model->t_sort.
 *
 **** Montar estrutura
 **  l_sort-spos      = 1.           " Sequência de ordenação
@@ -632,7 +430,7 @@ CLASS report_view IMPLEMENTATION.
 **  l_sort-expa      = 'X'.         " Expandir lista
 ***  l_sort-group     = 'KUNNR'.     " Mudança de controle: quebra de página, inserir sublinha
 **  l_sort-subtot   = 'X'.          " Subtotal
-**  APPEND l_sort TO t_sort.
+**  APPEND l_sort TO model->t_sort.
 
   ENDMETHOD.
 
@@ -658,10 +456,8 @@ CLASS report_view IMPLEMENTATION.
 
   METHOD eventos_alv.
 
-    CLEAR: model->t_events.
-
     FIELD-SYMBOLS: <f_events> TYPE slis_alv_event.
-    UNASSIGN: <f_events>.
+    CLEAR: model->t_events.
 
     CALL FUNCTION 'REUSE_ALV_EVENTS_GET'
 *    EXPORTING
@@ -674,21 +470,22 @@ CLASS report_view IMPLEMENTATION.
                                                  ASSIGNING <f_events>.
 
       IF sy-subrc EQ 0.
-        me->print_header( model ).
+        me->print_head( model ).
+        <f_events>-form = 'ZF_PRINT_HEADER'.
       ENDIF.
 
       READ TABLE model->t_events WITH KEY name = slis_ev_pf_status_set
                                                  ASSIGNING <f_events>.
 
       IF sy-subrc EQ 0.
-        me->set_status( ).
+        <f_events>-form = 'SET_STATUS'.
       ENDIF.
 
       READ TABLE model->t_events WITH KEY name = slis_ev_user_command
                                                  ASSIGNING <f_events>.
 
       IF sy-subrc EQ 0.
-        model->user_command( ).
+        <f_events>-form = 'USER_COMMAND'.
       ENDIF.
 
 
@@ -729,7 +526,7 @@ CLASS report_view IMPLEMENTATION.
 
   ENDMETHOD.
 
-  METHOD print_header.
+  METHOD print_head.
 
     DATA: l_dtde        TYPE char12,
           l_dtem        TYPE char30,
@@ -747,7 +544,7 @@ CLASS report_view IMPLEMENTATION.
 * Nome Do Relatório
   CLEAR model->w_header.
   model->w_header-typ = 'H'.
-  CONCATENATE sy-title '-' sy-mandt INTO model->w_header-info SEPARATED BY space.
+  CONCATENATE 'DESAFIO ESPECIAL -' sy-mandt INTO model->w_header-info SEPARATED BY space.
   APPEND model->w_header TO model->t_header.
 
 * Empresa
@@ -788,15 +585,11 @@ CLASS report_view IMPLEMENTATION.
   model->w_header-info = l_mandt.
   APPEND model->w_header TO model->t_header.
 
-  CALL FUNCTION 'REUSE_ALV_COMMENTARY_WRITE'
+    CALL FUNCTION 'REUSE_ALV_COMMENTARY_WRITE'
     EXPORTING
       it_list_commentary = model->t_header
       i_logo             = c_logo.
 
-  ENDMETHOD.
-
-  METHOD set_status.
-    SET PF-STATUS 'ZSTANDARD'.                            "#EC STAT_UNDEF
   ENDMETHOD.
 
 ENDCLASS.
