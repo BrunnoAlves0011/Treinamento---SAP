@@ -1,0 +1,87 @@
+*---------------------------------------------------------------------*
+* Report YDESAFIOYUYU_BH                                              *
+*---------------------------------------------------------------------*
+*                                                                     *
+*---------------------------------------------------------------------*
+REPORT YDESAFIOYUYU_BH.
+
+*--------------------------------------------------------------------*
+*                   TELA DE SELEÇÃO                                  *
+*         PERÍODO                     EKKO-AEDAT(OBRIGATÓRIO)        *
+*         PEDIDO DE COMPRA            EKKO-EBELN                     *
+*--------------------------------------------------------------------*
+
+*--------------------------------------------------------------------*
+*                   TELA DO RELATÓRIO                                *
+*------------FORNECEDOR                                              *
+*----------------PEDIDO DE COMPRA                                    *
+*--------------------ITEM DO PEDIDO ( EKPO-EBELP )                   *
+*--------------------------------------------------------------------*
+
+*--------------------------------------------------------------------*
+*         NA TELA DO RELATÓRIO, SERÁ INSERIDO 4 BOTÕES:              *
+*   • 1 PARA GERAR A MIGO;                                           *
+*   • 1 PARA GERAR A MIRO;                                           *
+*   • 1 PARA ESTORNAR A MIGO;                                        *
+*   • 1 PARA ESTORNAR A MIRO.                                        *
+*--------------------------------------------------------------------*
+
+*----------------------------------------------------------------------------------------------------------*
+*                         BOTÕES
+*         GERAR MIGO
+*AO CLICAR, O PROGRAMA DEVERÁ EXECUTAR A BAPI(BAPI_GOODSMVT_CREATE) PARA GERAÇÃO DO
+*DOCUMENTO DE MATERIAL. TRATAR AS MENSAGENS RETORNADAS NA TABELA BAPIRET2 DA BAPI EM UMA POPUP
+*DE MENSAGENS, EXIBINDO A LISTA DOS ERROS/MENSAGENS QUE RETORNARAM.
+*         GERAR MIRO
+*AO CLICAR, O PROGRAMA DEVERÁ BUSCAR SE O PEDIDO JÁ TEM UMA MIGO CRIADA E NÃO ESTORNADA, E EXECUTAR
+*A BAPI (BAPI_INCOMINGINVOICE_CREATE) PARA GERAÇÃO DA CONFIRMAÇÃO DE FATURA. TRATAR AS
+*MENSAGENS RETORNADAS NA TABELA BAPIRET2 DA BAPI EM UMA POPUP DE MENSAGENS, EXIBINDO A LISTA DOS
+*ERROS/MENSAGENS QUE RETORNARAM.
+*         ESTORNAR MIGO
+*AO CLICAR, O PROGRAMA DEVERÁ VERIFICAR SE A MIRO À QUAL ESSA MIGO ESTÁ ATRIBUÍDA JÁ ESTÁ ESTORNADA,
+*CASO NÃO ESTEJA DAR MENSAGEM DE ERRO. CASO JÁ ESTEJA ESTORNADA A MIRO, ESTORNAR A MIGO CRIADA PARA
+*O PEDIDO SELECIONADO, UTILIZANDO A BAPI (BAPI_GOODSMVT_CANCEL). TRATAR AS MENSAGENS
+*RETORNADAS NA TABELA BAPIRET2 DA BAPI EM UMA POPUP DE MENSAGENS, EXIBINDO A LISTA DOS
+*ERROS/MENSAGENS QUE RETORNARAM.
+*         ESTORNAR MIRO
+*AO CLICAR, O PROGRAMA DEVERÁ ESTORNAR A MIRO CRIADA PARA O PEDIDO SELECIONADO, UTILIZE O SHDB DA
+*TRANSAÇÃO MR8M PARA EFETUAR O ESTORNO. TRATAR AS MENSAGENS RETORNADAS NA CHAMADA DA SHDB EM
+*UMA POPUP DE MENSAGENS, EXIBINDO A LISTA DOS ERROS/MENSAGENS QUE RETORNARAM.
+*--------------------------------------------------------------------*
+
+INCLUDE: YDESAFIOYUYU_BH_in_scr,
+         YDESAFIOYUYU_BH_in_model,
+         YDESAFIOYUYU_BH_in_view,
+         YDESAFIOYUYU_BH_in_controller.
+
+DATA: gc_controller TYPE REF TO report_controller,
+      model         TYPE REF TO report_model.
+
+INITIALIZATION.
+  CREATE OBJECT gc_controller.
+  CREATE OBJECT model.
+  gc_controller->initialization( ).
+
+AT SELECTION-SCREEN OUTPUT.
+  gc_controller->selection_screen_o( ).
+
+AT SELECTION-SCREEN.
+  gc_controller->selection_screen( ).
+
+START-OF-SELECTION.
+  gc_controller->start_of_selection( ).
+
+END-OF-SELECTION.
+  gc_controller->end_of_selection( ).
+
+FORM set_status USING rt_extab TYPE slis_t_extab.
+  SET PF-STATUS 'STATUS' EXCLUDING rt_extab.
+ENDFORM.  "SET_STATUS
+
+FORM user_command USING r_ucomm     LIKE sy-ucomm
+      rs_selfield TYPE slis_selfield.
+
+  model->user_command(  EXPORTING r_ucomm = r_ucomm
+                        CHANGING rs_selfield = rs_selfield ).
+
+ENDFORM.

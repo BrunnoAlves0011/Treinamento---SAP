@@ -1,0 +1,20 @@
+*&---------------------------------------------------------------------*
+*& Include          YDESAFIOYUYU_BH_IN_SCR
+*&---------------------------------------------------------------------*
+
+TABLES: ekko.
+
+SELECTION-SCREEN BEGIN OF SCREEN 110 AS SUBSCREEN.
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
+
+SELECT-OPTIONS: fil_per    FOR ekko-aedat, "OBLIGATORY,
+                fil_ped    FOR ekko-ebeln NO INTERVALS.
+
+SELECTION-SCREEN END OF BLOCK b1.
+SELECTION-SCREEN END OF SCREEN 110.
+
+SELECTION-SCREEN BEGIN OF TABBED BLOCK tab_screen FOR 8 LINES.
+
+SELECTION-SCREEN TAB (20) filt USER-COMMAND filter_evt DEFAULT SCREEN 110.
+
+SELECTION-SCREEN END OF BLOCK tab_screen.

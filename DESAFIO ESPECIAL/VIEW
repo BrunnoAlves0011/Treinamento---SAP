@@ -507,13 +507,13 @@ CLASS report_view IMPLEMENTATION.
     EXPORTING
       i_callback_program     = l_repid
       i_callback_top_of_page = 'TOP_OF_PAGE'
-      is_layout              = model->w_layout
-      it_fieldcat            = model->t_fieldcat
-      it_sort                = model->t_sort
+      is_layout              = model->w_layout x
+      it_fieldcat            = model->t_fieldcat x
+      it_sort                = model->t_sort x
       i_save                 = c_a
-      it_events              = model->t_events
+      it_events              = model->t_events x
       is_print               = model->w_print
-      i_grid_settings        = model->ls_grid_settings
+      i_grid_settings        = model->ls_grid_settings x
     TABLES
       t_outtab               = model->ti_saida
     EXCEPTIONS

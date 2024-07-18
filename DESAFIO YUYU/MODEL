@@ -1,0 +1,123 @@
+*&---------------------------------------------------------------------*
+*& Include          YDESAFIOYUYU_BH_IN_MODEL
+*&---------------------------------------------------------------------*
+
+CLASS report_model DEFINITION.
+
+  PUBLIC SECTION.
+
+    TYPE-POOLS: slis.
+
+    TYPES: BEGIN OF ty_table,
+             lifnr  TYPE ekko-lifnr,
+             ebeln  TYPE ekko-ebeln,
+             ebelp  TYPE ekpo-ebelp,
+           END OF ty_table.
+
+    DATA: p_month TYPE string,
+          p_year  TYPE string.
+
+    DATA: it_table TYPE TABLE OF ty_table,
+          st_table TYPE ty_table.
+    DATA: t_events TYPE slis_t_event,
+          w_layout TYPE slis_layout_alv,
+          it_fieldcat          TYPE slis_t_fieldcat_alv,
+*          st_fieldcat          LIKE LINE OF it_fieldcat,
+*          t_fieldcat           TYPE slis_t_fieldcat_alv,
+          w_fieldcat           TYPE slis_fieldcat_alv.
+*
+*          t_sort               TYPE slis_t_sortinfo_alv,
+*          t_layout             TYPE slis_layout_alv,
+*          ls_grid_settings     TYPE lvc_s_glay,
+*          ti_saida             TYPE TABLE OF ty_table.
+
+    METHODS: start_of_selection,
+             get_pedido,
+             init_modify_met,
+             validate_screen_mod,
+             modify_reg,
+             loop_data,
+             user_command IMPORTING r_ucomm     LIKE sy-ucomm
+                          CHANGING rs_selfield  TYPE slis_selfield.
+
+ENDCLASS.
+
+CLASS report_model IMPLEMENTATION.
+
+  METHOD start_of_selection.
+
+    me->get_pedido( ).
+
+  ENDMETHOD.
+
+  METHOD get_pedido.
+
+    SELECT ekko~lifnr, ekko~ebeln, ekpo~ebelp
+      FROM ekko
+      INNER JOIN ekpo ON ekpo~ebeln = ekko~ebeln
+      WHERE ekko~aedat IN @fil_per
+      AND   ekpo~ebelp IN @fil_ped
+      INTO CORRESPONDING FIELDS OF TABLE @it_table.
+
+
+*    me->loop_data( ).
+*    me->loop_icon( ).
+
+  ENDMETHOD.
+
+  METHOD init_modify_met.
+
+    me->validate_screen_mod( ).
+    me->modify_reg( ).
+
+  ENDMETHOD.
+
+  METHOD validate_screen_mod.
+
+*    IF mod_num IS INITIAL.
+*      MESSAGE 'Numero Pedido Obrigatorio' TYPE 'E'.
+*    ENDIF.
+*
+*    IF mod_dat IS INITIAL.
+*      MESSAGE 'Data Pedido Obrigatorio' TYPE 'E'.
+*    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD modify_reg.
+
+*    DATA: pedido_cab TYPE nome_tabela.
+*
+*    pedido_cab-numero_pedido = mod_num.
+*    pedido_cab-data_pedido = mod_dat.
+
+*    MODIFY nome_tabela FROM pedido_cab.
+*
+*    MESSAGE 'Pedido Salvo/Alterado com Sucesso!' TYPE 'S' DISPLAY LIKE 'I'.
+
+  ENDMETHOD.
+
+  METHOD loop_data.
+
+  ENDMETHOD.
+
+   METHOD user_command.
+
+    CASE r_ucomm.
+      WHEN 'MIGO1'.
+
+        rs_selfield-refresh = 'X'.
+
+      WHEN 'MIRO1'.
+
+        rs_selfield-refresh = 'X'.
+
+      WHEN 'MIGO2'.
+
+      WHEN 'MIRO2'.
+
+    ENDCASE.
+
+  ENDMETHOD.
+
+ENDCLASS.

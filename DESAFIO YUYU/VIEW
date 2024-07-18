@@ -1,0 +1,191 @@
+*&---------------------------------------------------------------------*
+*& Include          YDESAFIOYUYU_BH_IN_VIEW
+*&---------------------------------------------------------------------*
+
+CLASS report_view DEFINITION.
+
+  PUBLIC SECTION.
+
+    DATA: salv_alv TYPE REF TO cl_salv_table,
+          o_events TYPE REF TO cl_salv_events_table.
+
+    METHODS: initialization,
+             selection_screen_o,
+             selection_screen   IMPORTING model TYPE REF TO report_model,
+             end_of_selection   IMPORTING model TYPE REF TO report_model,
+             display_alv        IMPORTING model TYPE REF TO report_model,
+             set_toolbar,
+             fieldcat           IMPORTING model TYPE REF TO report_model,
+             set_fieldcat       IMPORTING model          TYPE REF TO report_model
+                                          p_fieldname    TYPE string "1
+                                          p_reptext_ddic TYPE string "2
+                                          p_no_zero      TYPE char2  "3
+                                          p_no_out       TYPE char2  "4
+                                          p_edit         TYPE char2  "5
+                                          p_checkbox     TYPE char2  "6
+                                          p_hotspot      TYPE char2  "7
+                                          p_datatype     TYPE char4  "8
+                                          p_inttype      TYPE c      "9
+                                          p_intlen       TYPE string "10
+                                          p_do_sum       TYPE c,     "11
+             eventos_alv        IMPORTING model TYPE REF TO report_model.
+
+ENDCLASS.
+
+CLASS report_view IMPLEMENTATION.
+
+  METHOD initialization.
+
+*    filt = '@4G@ Filtros'.
+*    modi = '@17@ Criação/Modificação'.
+*    mod_btn = '@2L@ Salvar'.
+
+  ENDMETHOD.
+
+  METHOD selection_screen_o.
+
+  ENDMETHOD.
+
+  METHOD selection_screen.
+*    CASE sy-ucomm.
+*      WHEN 'MOD_REG'.
+*
+*        model->init_modify_met( ).
+*
+*      WHEN OTHERS.
+*    ENDCASE.
+  ENDMETHOD.
+
+  METHOD end_of_selection.
+
+    me->set_toolbar( ).
+    me->fieldcat( model ).
+    me->display_alv( model ).
+
+  ENDMETHOD.
+
+  METHOD display_alv.
+    TRY.
+      DATA: ls_grid_settings     TYPE lvc_s_glay.
+
+      model->w_layout-box_fieldname = 'CHECKBOX'.
+      model->w_layout-group_change_edit = 'X'.
+      model->w_layout-zebra             = 'X'.
+      model->w_layout-colwidth_optimize = 'X'.
+*        CALL METHOD cl_salv_table=>factory
+*          IMPORTING
+*            r_salv_table = salv_alv
+*          CHANGING
+*            t_table      = model->it_table.
+*        salv_alv->display( ).
+      CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+      EXPORTING
+        I_CALLBACK_PROGRAM                = sy-repid
+        I_CALLBACK_TOP_OF_PAGE            = 'TOP_OF_PAGE'
+        I_GRID_SETTINGS                   = ls_grid_settings
+        IS_LAYOUT                         = model->w_layout
+*        IT_FIELDCAT                       =
+        I_SAVE                            = 'A'
+        IT_EVENTS                         = model->t_events
+      TABLES
+        t_outtab                          = model->it_table
+      EXCEPTIONS
+        PROGRAM_ERROR                     = 1
+        OTHERS                            = 2
+        .
+      IF sy-subrc <> 0.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+        WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
+
+      CATCH cx_salv_msg .
+    ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD set_toolbar.
+
+*    DATA: functions TYPE REF TO cl_salv_functions_list.
+*    functions = salv_alv->get_functions( ).
+*    functions->set_default( ).
+
+  ENDMETHOD.
+
+  METHOD fieldcat.
+
+    DATA: p_reptext_ddic TYPE string.
+
+    p_reptext_ddic = TEXT-020.
+    me->set_fieldcat(
+    EXPORTING
+      model = model
+      p_fieldname    = 'OAL'
+      p_reptext_ddic = p_reptext_ddic
+      p_no_zero      = ''
+      p_no_out       = ''
+      p_edit         = ''
+      p_checkbox     = ''
+      p_hotspot      = ''
+      p_datatype     = 'CHAR'
+      p_inttype      = 'C'
+      p_intlen       = '20'
+      p_do_sum       = ''  ).
+
+  ENDMETHOD.
+
+  METHOD set_fieldcat.
+
+    CLEAR model->w_fieldcat.
+
+    model->w_fieldcat-fieldname     = p_fieldname.
+    model->w_fieldcat-tabname       = 'IT_TABLE'.
+    model->w_fieldcat-reptext_ddic  = p_reptext_ddic.
+    model->w_fieldcat-no_zero       = p_no_zero.
+    model->w_fieldcat-no_out        = p_no_out.
+    model->w_fieldcat-edit          = p_edit.
+    model->w_fieldcat-checkbox      = p_checkbox.
+    model->w_fieldcat-hotspot       = p_hotspot.
+    model->w_fieldcat-datatype      = p_datatype.
+    model->w_fieldcat-inttype       = p_inttype.
+    model->w_fieldcat-intlen        = p_intlen.
+    model->w_fieldcat-do_sum        = p_do_sum.
+
+    APPEND model->w_fieldcat TO model->it_fieldcat.
+
+
+  ENDMETHOD.
+
+  METHOD eventos_alv.
+    FIELD-SYMBOLS: <f_events> TYPE slis_alv_event.
+    CLEAR: model->t_events.
+
+    CALL FUNCTION 'REUSE_ALV_EVENTS_GET'
+*    EXPORTING
+*      i_list_type = 0
+    IMPORTING
+      et_events   = model->t_events.
+
+    IF sy-subrc EQ 0.
+      READ TABLE model->t_events WITH KEY name = slis_ev_top_of_page
+                                                 ASSIGNING <f_events>.
+*      IF sy-subrc EQ 0.
+*        me->print_head( model ).
+*        <f_events>-form = 'ZF_PRINT_HEADER'.
+*      ENDIF.
+
+      READ TABLE model->t_events WITH KEY name = slis_ev_pf_status_set
+                                                 ASSIGNING <f_events>.
+      IF sy-subrc EQ 0.
+        <f_events>-form = 'SET_STATUS'.
+      ENDIF.
+
+      READ TABLE model->t_events WITH KEY name = slis_ev_user_command
+                                                 ASSIGNING <f_events>.
+      IF sy-subrc EQ 0.
+        <f_events>-form = 'USER_COMMAND'.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+ENDCLASS.
