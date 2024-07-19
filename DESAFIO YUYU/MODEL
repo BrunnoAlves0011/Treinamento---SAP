@@ -9,36 +9,57 @@ CLASS report_model DEFINITION.
     TYPE-POOLS: slis.
 
     TYPES: BEGIN OF ty_table,
-             lifnr  TYPE ekko-lifnr,
-             ebeln  TYPE ekko-ebeln,
-             ebelp  TYPE ekpo-ebelp,
+             lifnr TYPE ekko-lifnr,
+             ebeln TYPE ekko-ebeln,
+             ebelp TYPE ekpo-ebelp,
            END OF ty_table.
 
-    DATA: p_month TYPE string,
-          p_year  TYPE string.
+    TYPES: BEGIN OF ty_saida,
+             dats  TYPE sy-datum,
+             aedat TYPE ekko-aedat,
+             lifnr TYPE ekko-lifnr,
+             ebeln TYPE ekko-ebeln,
+             werks TYPE ekpo-werks,
+             lgort TYPE ekpo-lgort,
+             menge TYPE ekpo-menge,
+             matnr TYPE ekpo-matnr,
+           END OF ty_saida.
+
+    DATA: p_month  TYPE string,
+          p_year   TYPE string,
+          t_events TYPE slis_t_event..
 
     DATA: it_table TYPE TABLE OF ty_table,
-          st_table TYPE ty_table.
-    DATA: t_events TYPE slis_t_event,
-          w_layout TYPE slis_layout_alv,
-          it_fieldcat          TYPE slis_t_fieldcat_alv,
-*          st_fieldcat          LIKE LINE OF it_fieldcat,
-*          t_fieldcat           TYPE slis_t_fieldcat_alv,
-          w_fieldcat           TYPE slis_fieldcat_alv.
-*
-*          t_sort               TYPE slis_t_sortinfo_alv,
-*          t_layout             TYPE slis_layout_alv,
-*          ls_grid_settings     TYPE lvc_s_glay,
-*          ti_saida             TYPE TABLE OF ty_table.
+          st_table TYPE ty_table,
+          it_saida TYPE TABLE OF ty_saida,
+          st_saida TYPE ty_saida.
+
+    DATA: o_salve  TYPE REF TO cl_salv_table,
+          o_select TYPE REF TO cl_salv_selections,
+          l_row    TYPE salv_s_cell,
+          o_row    TYPE i.
+
+    DATA: ls_mmdochdr TYPE bapi2017_gm_head_01,
+          lt_gm       TYPE STANDARD TABLE OF bapi2017_gm_item_create,
+          ls_gm       TYPE bapi2017_gm_item_create,
+          lt_ret      TYPE STANDARD TABLE OF bapiret2,
+          ls_ret      TYPE bapiret2,
+          ls_hdr      TYPE bapi2017_gm_head_ret,
+          ls_ser      TYPE bapi2017_gm_serialnumber,
+          lt_ser      TYPE STANDARD TABLE OF bapi2017_gm_serialnumber,
+          return      TYPE TABLE OF bapiret2.
 
     METHODS: start_of_selection,
-             get_pedido,
-             init_modify_met,
-             validate_screen_mod,
-             modify_reg,
-             loop_data,
-             user_command IMPORTING r_ucomm     LIKE sy-ucomm
-                          CHANGING rs_selfield  TYPE slis_selfield.
+      get_pedido,
+      init_modify_met,
+      validate_miro,
+      validate_migo,
+      criar_migo,
+      criar_miro,
+      estornar_migo,
+      estornar_miro,
+      added_function   FOR EVENT added_function OF cl_salv_events_table
+        IMPORTING e_salv_function.
 
 ENDCLASS.
 
@@ -52,13 +73,19 @@ CLASS report_model IMPLEMENTATION.
 
   METHOD get_pedido.
 
-    SELECT ekko~lifnr, ekko~ebeln, ekpo~ebelp
+    SELECT ekko~aedat, ekko~lifnr, ekpo~werks, ekpo~lgort, ekpo~menge, ekpo~matnr, ekko~ebeln
+      FROM ekko
+      INNER JOIN ekpo ON ekpo~ebeln = ekko~ebeln
+      WHERE ekko~aedat IN @fil_per
+      AND   ekpo~ebelp IN @fil_ped
+      INTO CORRESPONDING FIELDS OF TABLE @it_saida.
+
+    SELECT ekko~ebeln, ekpo~ebelp, ekko~lifnr
       FROM ekko
       INNER JOIN ekpo ON ekpo~ebeln = ekko~ebeln
       WHERE ekko~aedat IN @fil_per
       AND   ekpo~ebelp IN @fil_ped
       INTO CORRESPONDING FIELDS OF TABLE @it_table.
-
 
 *    me->loop_data( ).
 *    me->loop_icon( ).
@@ -67,54 +94,157 @@ CLASS report_model IMPLEMENTATION.
 
   METHOD init_modify_met.
 
-    me->validate_screen_mod( ).
-    me->modify_reg( ).
+*    me->validate_migo( ).
+*    me->validate_miro( ).
+*    me->criar_migo( ).
+*    me->criar_miro( ).
+*    me->modify_reg( ).
 
   ENDMETHOD.
 
-  METHOD validate_screen_mod.
-
-*    IF mod_num IS INITIAL.
-*      MESSAGE 'Numero Pedido Obrigatorio' TYPE 'E'.
-*    ENDIF.
-*
-*    IF mod_dat IS INITIAL.
-*      MESSAGE 'Data Pedido Obrigatorio' TYPE 'E'.
-*    ENDIF.
+  METHOD validate_miro.
 
   ENDMETHOD.
 
-  METHOD modify_reg.
-
-*    DATA: pedido_cab TYPE nome_tabela.
-*
-*    pedido_cab-numero_pedido = mod_num.
-*    pedido_cab-data_pedido = mod_dat.
-
-*    MODIFY nome_tabela FROM pedido_cab.
-*
-*    MESSAGE 'Pedido Salvo/Alterado com Sucesso!' TYPE 'S' DISPLAY LIKE 'I'.
+  METHOD validate_migo.
 
   ENDMETHOD.
 
-  METHOD loop_data.
+  METHOD estornar_migo.
+*    (BAPI_GOODSMVT_CANCEL)
+  ENDMETHOD.
+
+  METHOD estornar_miro.
+*    UTILIZE O SHDB, TRANSAÇÃO MR8M
+  ENDMETHOD.
+
+  METHOD criar_migo.
+*         GERAR MIGO
+*AO CLICAR, O PROGRAMA DEVERÁ EXECUTAR A BAPI(BAPI_GOODSMVT_CREATE) PARA GERAÇÃO DO
+*DOCUMENTO DE MATERIAL. TRATAR AS MENSAGENS RETORNADAS NA TABELA BAPIRET2 DA BAPI EM UMA POPUP
+*DE MENSAGENS, EXIBINDO A LISTA DOS ERROS/MENSAGENS QUE RETORNARAM.
+* GM_CODED 02 - TCODE MB31
+
+*     p_pstdat LIKE bapi2017_gm_head_01-pstng_date,    "DATA POSTADA SY-DATUM
+*     p_docdat LIKE bapi2017_gm_head_01-doc_date,      "DATA CRIAÇÃO EKKO-AEDAT
+*     p_matnr  LIKE bapi2017_gm_item_create-material,  "CODIGO FORNECEDOR EKKO-LIFNR
+*     p_plant  LIKE bapi2017_gm_item_create-plant,     "CENTRO  EKPO-WERKS
+*     p_sloc   LIKE bapi2017_gm_item_create-stge_loc,  "DEPOSITO EKPO-LGORT
+*     p_quant  LIKE bapi2017_gm_item_create-entry_qnt, "QUANTIDADE ENTRADA EKPO-MENGE
+*     p_batch  LIKE bapi2017_gm_item_create-batch.     "CODIGO MATERIAL EKPO-MATNR
+    DATA: lv_return.
+    DATA: lt_fields TYPE TABLE OF sval,
+          st_fields TYPE sval.
+
+    st_fields-tabname = 'EKKO'.
+    st_fields-fieldname = 'EBELN'.
+    APPEND st_fields TO lt_fields.
+
+    CALL FUNCTION 'POPUP_GET_VALUES'
+      EXPORTING
+        popup_title = 'Gerar Migo'
+      IMPORTING
+        returncode  = lv_return
+      TABLES
+        fields      = lt_fields.
+
+    IF lv_return IS INITIAL.
+      LOOP AT lt_fields INTO st_fields.
+        IF st_fields-fieldname EQ 'EBELN'.
+          LOOP AT it_saida INTO st_saida.
+            IF st_fields-value = st_saida-ebeln.
+              ls_mmdochdr-pstng_date = sy-datum.
+              ls_mmdochdr-doc_date = sy-datum.
+              ls_mmdochdr-pr_uname = sy-uname.
+*              ls_gm-move_type = '561'. "IDK
+              ls_gm-material = st_saida-lifnr.
+              ls_gm-plant = st_saida-werks.
+              ls_gm-stge_loc = st_saida-lgort.
+              ls_gm-entry_qnt = st_saida-menge.
+              ls_gm-batch = st_saida-matnr.
+              MESSAGE |Migo sendo Gerada| TYPE 'I' DISPLAY LIKE 'I'.
+              EXIT.
+            ELSE.
+              MESSAGE | Documento não Encontrado | TYPE 'E' DISPLAY LIKE 'I'.
+              EXIT.
+            ENDIF.
+          ENDLOOP.
+        ENDIF.
+      ENDLOOP.
+    ENDIF.
+
+    APPEND ls_gm TO lt_gm.
+    CLEAR ls_gm.
+
+    IF return IS INITIAL.
+      MESSAGE | Erro ao criar movimento de mercadorias | TYPE 'E' DISPLAY LIKE 'I'.
+    ELSE.
+      MESSAGE |Criado a Migo com sucesso| TYPE 'I' DISPLAY LIKE 'I'.
+*    CALL FUNCTION 'BAPI_GOODSMVT_CREATE'
+*      EXPORTING
+*        goodsmvt_header               = ls_mmdochdr
+*        goodsmvt_code                 = '01'
+**       TESTRUN                       = ' '
+*      TABLES
+*        goodsmvt_item                 = lt_gm
+*        return                        = return.
+    ENDIF.
 
   ENDMETHOD.
 
-   METHOD user_command.
+  METHOD criar_miro.
+*         GERAR MIRO
+*AO CLICAR, O PROGRAMA DEVERÁ BUSCAR SE O PEDIDO JÁ TEM UMA MIGO CRIADA E NÃO ESTORNADA, E EXECUTAR
+*A BAPI (BAPI_INCOMINGINVOICE_CREATE) PARA GERAÇÃO DA CONFIRMAÇÃO DE FATURA. TRATAR AS
+*MENSAGENS RETORNADAS NA TABELA BAPIRET2 DA BAPI EM UMA POPUP DE MENSAGENS, EXIBINDO A LISTA DOS
+*ERROS/MENSAGENS QUE RETORNARAM.
+    me->validate_miro( ).
 
-    CASE r_ucomm.
+*CALL FUNCTION 'BAPI_INCOMINGINVOICE_CREATE'
+*  EXPORTING
+*    headerdata                =
+**   ADDRESSDATA               =
+** IMPORTING
+**   INVOICEDOCNUMBER          =
+**   FISCALYEAR                =
+*  tables
+*    itemdata                  =
+**   ACCOUNTINGDATA            =
+**   GLACCOUNTDATA             =
+**   MATERIALDATA              =
+**   TAXDATA                   =
+**   WITHTAXDATA               =
+**   VENDORITEMSPLITDATA       =
+*    return                    =
+**   EXTENSIONIN               =
+**   TM_ITEMDATA               =
+**   NFMETALLITMS              =
+**   ASSETDATA                 =
+*          .
+
+  ENDMETHOD.
+
+  METHOD added_function.
+    DATA: rs_selfield TYPE slis_selfield.
+
+    CASE e_salv_function.
       WHEN 'MIGO1'.
-
+        me->criar_migo( ).
         rs_selfield-refresh = 'X'.
 
       WHEN 'MIRO1'.
-
+        me->criar_miro( ).
         rs_selfield-refresh = 'X'.
 
       WHEN 'MIGO2'.
+        me->estornar_migo( ).
+        rs_selfield-refresh = 'X'.
 
       WHEN 'MIRO2'.
+        me->estornar_miro( ).
+        rs_selfield-refresh = 'X'.
+
+      WHEN OTHERS.
 
     ENDCASE.
 

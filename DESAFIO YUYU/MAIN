@@ -1,15 +1,15 @@
-*---------------------------------------------------------------------*
-* Report YDESAFIOYUYU_BH                                              *
-*---------------------------------------------------------------------*
-*                                                                     *
-*---------------------------------------------------------------------*
-REPORT YDESAFIOYUYU_BH.
+*--------------------------------------------------------------------*
+* Report YDESAFIOYUYU_BH                                             *
+*--------------------------------------------------------------------*
+*                                                                    *
+*--------------------------------------------------------------------*
+REPORT ydesafioyuyu_bh.
 
-*--------------------------------------------------------------------*
-*                   TELA DE SELEÇÃO                                  *
-*         PERÍODO                     EKKO-AEDAT(OBRIGATÓRIO)        *
-*         PEDIDO DE COMPRA            EKKO-EBELN                     *
-*--------------------------------------------------------------------*
+**********************************************************************
+*  OBJETIVO
+* CRIAR A FUNÇÃO DO BOTÃO GERAR MIGO
+**********************************************************************
+
 
 *--------------------------------------------------------------------*
 *                   TELA DO RELATÓRIO                                *
@@ -26,33 +26,22 @@ REPORT YDESAFIOYUYU_BH.
 *   • 1 PARA ESTORNAR A MIRO.                                        *
 *--------------------------------------------------------------------*
 
-*----------------------------------------------------------------------------------------------------------*
-*                         BOTÕES
-*         GERAR MIGO
-*AO CLICAR, O PROGRAMA DEVERÁ EXECUTAR A BAPI(BAPI_GOODSMVT_CREATE) PARA GERAÇÃO DO
-*DOCUMENTO DE MATERIAL. TRATAR AS MENSAGENS RETORNADAS NA TABELA BAPIRET2 DA BAPI EM UMA POPUP
-*DE MENSAGENS, EXIBINDO A LISTA DOS ERROS/MENSAGENS QUE RETORNARAM.
-*         GERAR MIRO
-*AO CLICAR, O PROGRAMA DEVERÁ BUSCAR SE O PEDIDO JÁ TEM UMA MIGO CRIADA E NÃO ESTORNADA, E EXECUTAR
-*A BAPI (BAPI_INCOMINGINVOICE_CREATE) PARA GERAÇÃO DA CONFIRMAÇÃO DE FATURA. TRATAR AS
-*MENSAGENS RETORNADAS NA TABELA BAPIRET2 DA BAPI EM UMA POPUP DE MENSAGENS, EXIBINDO A LISTA DOS
-*ERROS/MENSAGENS QUE RETORNARAM.
-*         ESTORNAR MIGO
-*AO CLICAR, O PROGRAMA DEVERÁ VERIFICAR SE A MIRO À QUAL ESSA MIGO ESTÁ ATRIBUÍDA JÁ ESTÁ ESTORNADA,
-*CASO NÃO ESTEJA DAR MENSAGEM DE ERRO. CASO JÁ ESTEJA ESTORNADA A MIRO, ESTORNAR A MIGO CRIADA PARA
-*O PEDIDO SELECIONADO, UTILIZANDO A BAPI (BAPI_GOODSMVT_CANCEL). TRATAR AS MENSAGENS
-*RETORNADAS NA TABELA BAPIRET2 DA BAPI EM UMA POPUP DE MENSAGENS, EXIBINDO A LISTA DOS
-*ERROS/MENSAGENS QUE RETORNARAM.
-*         ESTORNAR MIRO
-*AO CLICAR, O PROGRAMA DEVERÁ ESTORNAR A MIRO CRIADA PARA O PEDIDO SELECIONADO, UTILIZE O SHDB DA
-*TRANSAÇÃO MR8M PARA EFETUAR O ESTORNO. TRATAR AS MENSAGENS RETORNADAS NA CHAMADA DA SHDB EM
-*UMA POPUP DE MENSAGENS, EXIBINDO A LISTA DOS ERROS/MENSAGENS QUE RETORNARAM.
+*--------------------------------------------------------------------*
+*                         BOTÕES                                     *
+*         GERAR MIGO                                                 *
+*                                                                    *
+*         GERAR MIRO                                                 *
+*                                                                    *
+*         ESTORNAR MIGO                                              *
+*                                                                    *
+*         ESTORNAR MIRO                                              *
+*                                                                    *
 *--------------------------------------------------------------------*
 
-INCLUDE: YDESAFIOYUYU_BH_in_scr,
-         YDESAFIOYUYU_BH_in_model,
-         YDESAFIOYUYU_BH_in_view,
-         YDESAFIOYUYU_BH_in_controller.
+INCLUDE: ydesafioyuyu_bh_in_scr,
+         ydesafioyuyu_bh_in_model,
+         ydesafioyuyu_bh_in_view,
+         ydesafioyuyu_bh_in_controller.
 
 DATA: gc_controller TYPE REF TO report_controller,
       model         TYPE REF TO report_model.
@@ -75,13 +64,5 @@ END-OF-SELECTION.
   gc_controller->end_of_selection( ).
 
 FORM set_status USING rt_extab TYPE slis_t_extab.
-  SET PF-STATUS 'STATUS' EXCLUDING rt_extab.
+  SET PF-STATUS 'ZSTATUS'.
 ENDFORM.  "SET_STATUS
-
-FORM user_command USING r_ucomm     LIKE sy-ucomm
-      rs_selfield TYPE slis_selfield.
-
-  model->user_command(  EXPORTING r_ucomm = r_ucomm
-                        CHANGING rs_selfield = rs_selfield ).
-
-ENDFORM.
