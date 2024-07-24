@@ -10,14 +10,6 @@ SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
 SELECT-OPTIONS: fil_per    FOR ekko-aedat, "OBLIGATORY,
                 fil_ped    FOR ekko-ebeln NO INTERVALS.
 
-*PARAMETERS: p_pstdat LIKE bapi2017_gm_head_01-pstng_date,    "DATA POSTADA
-*            p_docdat LIKE bapi2017_gm_head_01-doc_date,      "DATA CRIAÇÃO
-*            p_matnr  LIKE bapi2017_gm_item_create-material,  "CODIGO FORNECEDOR
-*            p_plant  LIKE bapi2017_gm_item_create-plant,     "CENTRO
-*            p_sloc   LIKE bapi2017_gm_item_create-stge_loc,  "DEPOSITO
-*            p_quant  LIKE bapi2017_gm_item_create-entry_qnt, "QUANTIDADE ENTRADA
-*            p_batch  LIKE bapi2017_gm_item_create-batch.     "CODIGO MATERIAL
-
 SELECTION-SCREEN END OF BLOCK b1.
 SELECTION-SCREEN END OF SCREEN 110.
 

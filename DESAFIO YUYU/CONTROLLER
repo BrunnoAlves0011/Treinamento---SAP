@@ -35,7 +35,7 @@ CLASS report_controller IMPLEMENTATION.
 
   METHOD selection_screen_o.
 
-    me->view->selection_screen_o( ).
+    me->view->selection_screen_o( model ).
 
   ENDMETHOD.
 

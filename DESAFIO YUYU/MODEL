@@ -15,24 +15,31 @@ CLASS report_model DEFINITION.
            END OF ty_table.
 
     TYPES: BEGIN OF ty_saida,
-             dats  TYPE sy-datum,
              aedat TYPE ekko-aedat,
-             lifnr TYPE ekko-lifnr,
              ebeln TYPE ekko-ebeln,
+             ebelp TYPE ekpo-ebelp,
              werks TYPE ekpo-werks,
              lgort TYPE ekpo-lgort,
+             meins TYPE ekpo-meins,
              menge TYPE ekpo-menge,
              matnr TYPE ekpo-matnr,
            END OF ty_saida.
 
     DATA: p_month  TYPE string,
           p_year   TYPE string,
-          t_events TYPE slis_t_event..
+          t_events TYPE slis_t_event.
 
     DATA: it_table TYPE TABLE OF ty_table,
           st_table TYPE ty_table,
+          tree     TYPE TABLE OF ty_table,
           it_saida TYPE TABLE OF ty_saida,
           st_saida TYPE ty_saida.
+
+    DATA: lo_nodes TYPE REF TO cl_salv_nodes,
+          lt_nodes TYPE salv_t_nodes,
+          lo_item  TYPE REF TO cl_salv_item,
+          lv_set   TYPE xfeld,
+          lv_value TYPE salv_de_constant.
 
     DATA: o_salve  TYPE REF TO cl_salv_table,
           o_select TYPE REF TO cl_salv_selections,
@@ -45,21 +52,23 @@ CLASS report_model DEFINITION.
           lt_ret      TYPE STANDARD TABLE OF bapiret2,
           ls_ret      TYPE bapiret2,
           ls_hdr      TYPE bapi2017_gm_head_ret,
-          ls_ser      TYPE bapi2017_gm_serialnumber,
-          lt_ser      TYPE STANDARD TABLE OF bapi2017_gm_serialnumber,
-          return      TYPE TABLE OF bapiret2.
+          lt_matdoc   TYPE bapi2017_gm_head_ret-mat_doc,
+          lt_docyear  TYPE bapi2017_gm_head_ret-doc_year,
+          lt_gm_ret   TYPE STANDARD TABLE OF bapi2017_gm_head_02,
+          ls_gm_ret   TYPE bapi2017_gm_head_02.
 
     METHODS: start_of_selection,
-      get_pedido,
-      init_modify_met,
-      validate_miro,
-      validate_migo,
-      criar_migo,
-      criar_miro,
-      estornar_migo,
-      estornar_miro,
-      added_function   FOR EVENT added_function OF cl_salv_events_table
-        IMPORTING e_salv_function.
+             get_pedido,
+             init_modify_met,
+             validate_miro,
+             validate_migo,
+             criar_migo,
+             criar_miro,
+             estornar_migo,
+             estornar_miro,
+             added_function   FOR EVENT added_function OF cl_salv_events_tree
+                              IMPORTING e_salv_function,
+             mensagens IMPORTING valor TYPE c.
 
 ENDCLASS.
 
@@ -73,11 +82,14 @@ CLASS report_model IMPLEMENTATION.
 
   METHOD get_pedido.
 
-    SELECT ekko~aedat, ekko~lifnr, ekpo~werks, ekpo~lgort, ekpo~menge, ekpo~matnr, ekko~ebeln
-      FROM ekko
-      INNER JOIN ekpo ON ekpo~ebeln = ekko~ebeln
+    SELECT ekko~aedat, ekko~ebeln, ekpo~ebelp, ekpo~werks, ekpo~lgort, ekpo~meins, ekpo~menge, ekpo~matnr
+      FROM ekpo
+      INNER JOIN ekko ON ekko~ebeln = ekpo~ebeln
       WHERE ekko~aedat IN @fil_per
       AND   ekpo~ebelp IN @fil_ped
+      AND   ekpo~werks <> ''
+      AND   ekpo~lgort <> ''
+      AND   ekko~lifnr <> ''
       INTO CORRESPONDING FIELDS OF TABLE @it_saida.
 
     SELECT ekko~ebeln, ekpo~ebelp, ekko~lifnr
@@ -85,7 +97,10 @@ CLASS report_model IMPLEMENTATION.
       INNER JOIN ekpo ON ekpo~ebeln = ekko~ebeln
       WHERE ekko~aedat IN @fil_per
       AND   ekpo~ebelp IN @fil_ped
-      INTO CORRESPONDING FIELDS OF TABLE @it_table.
+      AND   ekpo~werks <> ''
+      AND   ekpo~lgort <> ''
+      AND   ekko~lifnr <> ''
+      INTO CORRESPONDING FIELDS OF TABLE @it_table UP TO 100 ROWS.
 
 *    me->loop_data( ).
 *    me->loop_icon( ).
@@ -111,7 +126,62 @@ CLASS report_model IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD estornar_migo.
-*    (BAPI_GOODSMVT_CANCEL)
+
+    DATA: lv_return.
+    DATA: lt_fields TYPE TABLE OF sval,
+          st_fields TYPE sval.
+
+    DATA: valorm TYPE ekpo-matnr,
+          valord TYPE ekpo-aedat.
+
+    CLEAR: ls_gm_ret, valorm, valord.
+
+    st_fields-tabname = 'EKPO'.
+    st_fields-fieldname = 'MATNR'.
+    APPEND st_fields TO lt_fields.
+
+    st_fields-tabname = 'EKKO'.
+    st_fields-fieldname = 'AEDAT'.
+    APPEND st_fields TO lt_fields.
+
+    CALL FUNCTION 'POPUP_GET_VALUES'
+      EXPORTING
+        popup_title = 'Estornar Migo'
+      IMPORTING
+        returncode  = lv_return
+      TABLES
+        fields      = lt_fields.
+
+    READ TABLE lt_fields INTO st_fields INDEX 1.
+    valorm = st_fields-value.
+
+    READ TABLE lt_fields INTO st_fields INDEX 2.
+    valord = st_fields-value.
+
+    CLEAR: ls_gm_ret.
+
+*    READ TABLE it_saida INTO st_saida INDEX row.
+    LOOP AT it_saida INTO st_saida.
+      IF st_saida-matnr = valorm AND st_saida-aedat = valord.
+        ls_gm_ret-mat_doc = st_saida-matnr.
+        ls_gm_ret-doc_year = st_saida-aedat(4).
+        APPEND ls_gm_ret TO lt_gm_ret.
+      ELSE.
+        CONTINUE.
+      ENDIF.
+    ENDLOOP.
+
+    CALL FUNCTION 'BAPI_GOODSMVT_CANCEL'
+      EXPORTING
+        materialdocument          = ls_gm_ret-mat_doc
+        matdocumentyear           = ls_gm_ret-doc_year
+      TABLES
+        return                    = lt_ret.
+
+    READ TABLE lt_ret INTO ls_ret INDEX 1.
+    DATA(mensagem) = ls_ret-message.
+    MESSAGE mensagem TYPE 'I'.
+
   ENDMETHOD.
 
   METHOD estornar_miro.
@@ -119,24 +189,15 @@ CLASS report_model IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD criar_migo.
-*         GERAR MIGO
-*AO CLICAR, O PROGRAMA DEVERÁ EXECUTAR A BAPI(BAPI_GOODSMVT_CREATE) PARA GERAÇÃO DO
-*DOCUMENTO DE MATERIAL. TRATAR AS MENSAGENS RETORNADAS NA TABELA BAPIRET2 DA BAPI EM UMA POPUP
-*DE MENSAGENS, EXIBINDO A LISTA DOS ERROS/MENSAGENS QUE RETORNARAM.
-* GM_CODED 02 - TCODE MB31
 
-*     p_pstdat LIKE bapi2017_gm_head_01-pstng_date,    "DATA POSTADA SY-DATUM
-*     p_docdat LIKE bapi2017_gm_head_01-doc_date,      "DATA CRIAÇÃO EKKO-AEDAT
-*     p_matnr  LIKE bapi2017_gm_item_create-material,  "CODIGO FORNECEDOR EKKO-LIFNR
-*     p_plant  LIKE bapi2017_gm_item_create-plant,     "CENTRO  EKPO-WERKS
-*     p_sloc   LIKE bapi2017_gm_item_create-stge_loc,  "DEPOSITO EKPO-LGORT
-*     p_quant  LIKE bapi2017_gm_item_create-entry_qnt, "QUANTIDADE ENTRADA EKPO-MENGE
-*     p_batch  LIKE bapi2017_gm_item_create-batch.     "CODIGO MATERIAL EKPO-MATNR
     DATA: lv_return.
     DATA: lt_fields TYPE TABLE OF sval,
           st_fields TYPE sval.
+    DATA: valor  TYPE ekpo-ebeln.
 
-    st_fields-tabname = 'EKKO'.
+    CLEAR: ls_gm, valor, ls_mmdochdr.
+
+    st_fields-tabname = 'EKPO'.
     st_fields-fieldname = 'EBELN'.
     APPEND st_fields TO lt_fields.
 
@@ -147,48 +208,58 @@ CLASS report_model IMPLEMENTATION.
         returncode  = lv_return
       TABLES
         fields      = lt_fields.
+    READ TABLE lt_fields INTO st_fields INDEX 1.
+    valor = st_fields-value.
+    CLEAR: ls_gm.
+    IF lv_return EQ 'A'.
+      me->mensagens( 'E' ).
+      EXIT.
+    ELSE.
 
-    IF lv_return IS INITIAL.
-      LOOP AT lt_fields INTO st_fields.
-        IF st_fields-fieldname EQ 'EBELN'.
-          LOOP AT it_saida INTO st_saida.
-            IF st_fields-value = st_saida-ebeln.
-              ls_mmdochdr-pstng_date = sy-datum.
-              ls_mmdochdr-doc_date = sy-datum.
-              ls_mmdochdr-pr_uname = sy-uname.
-*              ls_gm-move_type = '561'. "IDK
-              ls_gm-material = st_saida-lifnr.
-              ls_gm-plant = st_saida-werks.
-              ls_gm-stge_loc = st_saida-lgort.
-              ls_gm-entry_qnt = st_saida-menge.
-              ls_gm-batch = st_saida-matnr.
-              MESSAGE |Migo sendo Gerada| TYPE 'I' DISPLAY LIKE 'I'.
-              EXIT.
-            ELSE.
-              MESSAGE | Documento não Encontrado | TYPE 'E' DISPLAY LIKE 'I'.
-              EXIT.
-            ENDIF.
-          ENDLOOP.
+      LOOP AT it_saida INTO st_saida.
+        IF st_saida-ebeln = valor.
+          ls_gm-po_item   = st_saida-ebelp.
+          ls_gm-entry_qnt = st_saida-menge.
+          ls_gm-entry_uom = st_saida-meins.
+          ls_gm-stge_loc  = st_saida-lgort.
+          ls_gm-plant     = st_saida-werks.
+          ls_gm-material  = st_saida-matnr.
+          ls_gm-po_number = valor.
+          ls_gm-move_type = '101'.
+          ls_gm-mvt_ind   = 'B'.
+          APPEND ls_gm TO lt_gm.
+        ELSE.
+          CONTINUE.
         ENDIF.
       ENDLOOP.
+
     ENDIF.
 
-    APPEND ls_gm TO lt_gm.
-    CLEAR ls_gm.
+    ls_mmdochdr-pstng_date = '20240201'.
+    ls_mmdochdr-doc_date   = '20240201'.
+    ls_mmdochdr-pr_uname   = sy-uname.
 
-    IF return IS INITIAL.
-      MESSAGE | Erro ao criar movimento de mercadorias | TYPE 'E' DISPLAY LIKE 'I'.
-    ELSE.
-      MESSAGE |Criado a Migo com sucesso| TYPE 'I' DISPLAY LIKE 'I'.
-*    CALL FUNCTION 'BAPI_GOODSMVT_CREATE'
-*      EXPORTING
-*        goodsmvt_header               = ls_mmdochdr
-*        goodsmvt_code                 = '01'
-**       TESTRUN                       = ' '
-*      TABLES
-*        goodsmvt_item                 = lt_gm
-*        return                        = return.
-    ENDIF.
+    CALL FUNCTION 'BAPI_GOODSMVT_CREATE'
+      EXPORTING
+        goodsmvt_header  = ls_mmdochdr
+        goodsmvt_code    = '01'
+*       testrun          = 'X'
+      IMPORTING
+        materialdocument = lt_matdoc
+        matdocumentyear  = lt_docyear
+      TABLES
+        goodsmvt_item    = lt_gm
+        return           = lt_ret.
+
+    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+      EXPORTING
+        wait = 'X'.
+    CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
+
+    READ TABLE lt_ret INTO ls_ret INDEX 1.
+    DATA(mensagem) = ls_ret-message.
+    MESSAGE mensagem TYPE 'I'.
+
 
   ENDMETHOD.
 
@@ -225,25 +296,30 @@ CLASS report_model IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD added_function.
-    DATA: rs_selfield TYPE slis_selfield.
 
     CASE e_salv_function.
       WHEN 'MIGO1'.
         me->criar_migo( ).
-        rs_selfield-refresh = 'X'.
-
       WHEN 'MIRO1'.
         me->criar_miro( ).
-        rs_selfield-refresh = 'X'.
-
       WHEN 'MIGO2'.
         me->estornar_migo( ).
-        rs_selfield-refresh = 'X'.
-
       WHEN 'MIRO2'.
         me->estornar_miro( ).
-        rs_selfield-refresh = 'X'.
+      WHEN 'BACK'.
+        LEAVE PROGRAM.
+      WHEN OTHERS.
+    ENDCASE.
 
+  ENDMETHOD.
+
+  METHOD mensagens.
+
+    CASE valor.
+      WHEN 'A'.
+        MESSAGE 'Sucesso!' TYPE 'I' DISPLAY LIKE 'S'.
+      WHEN 'E'.
+        MESSAGE 'Erro!' TYPE 'I' DISPLAY LIKE 'E'.
       WHEN OTHERS.
 
     ENDCASE.

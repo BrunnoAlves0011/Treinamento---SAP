@@ -7,7 +7,7 @@ REPORT ydesafioyuyu_bh.
 
 **********************************************************************
 *  OBJETIVO
-* CRIAR A FUNÇÃO DO BOTÃO GERAR MIGO
+* CRIAR A FUNÇÃO DO BOTÃO GERAR MIRO
 **********************************************************************
 
 
@@ -37,18 +37,17 @@ REPORT ydesafioyuyu_bh.
 *         ESTORNAR MIRO                                              *
 *                                                                    *
 *--------------------------------------------------------------------*
+DATA: salv_tree TYPE REF TO cl_salv_tree.
 
 INCLUDE: ydesafioyuyu_bh_in_scr,
          ydesafioyuyu_bh_in_model,
          ydesafioyuyu_bh_in_view,
          ydesafioyuyu_bh_in_controller.
 
-DATA: gc_controller TYPE REF TO report_controller,
-      model         TYPE REF TO report_model.
+DATA: gc_controller TYPE REF TO report_controller.
 
 INITIALIZATION.
   CREATE OBJECT gc_controller.
-  CREATE OBJECT model.
   gc_controller->initialization( ).
 
 AT SELECTION-SCREEN OUTPUT.
@@ -62,7 +61,3 @@ START-OF-SELECTION.
 
 END-OF-SELECTION.
   gc_controller->end_of_selection( ).
-
-FORM set_status USING rt_extab TYPE slis_t_extab.
-  SET PF-STATUS 'ZSTATUS'.
-ENDFORM.  "SET_STATUS
