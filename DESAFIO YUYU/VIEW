@@ -6,29 +6,33 @@ CLASS report_view DEFINITION.
 
   PUBLIC SECTION.
 
+    CONSTANTS: gc_true  TYPE sap_bool VALUE 'X'.
+
     DATA: salv_alv TYPE REF TO cl_salv_table,
           o_events TYPE REF TO cl_salv_events_table.
 
     DATA: lo_nodes      TYPE REF TO cl_salv_nodes,
           lo_node       TYPE REF TO cl_salv_node,
           salv_settings TYPE REF TO cl_salv_tree_settings,
-          o_events_tree TYPE REF TO cl_salv_events_tree.
+          o_events_tree TYPE REF TO cl_salv_events_tree,
+          lo_item       TYPE REF TO cl_salv_item.
 
-    DATA: texto TYPE lvc_value,
-          key   TYPE salv_de_node_key,
-          tipo1 TYPE ekpo-ebelp.
+    DATA: texto      TYPE lvc_value,
+          key        TYPE salv_de_node_key,
+          tipo1      TYPE ekpo-ebelp,
+          p_node_key TYPE lvc_nkey.
 
     METHODS: initialization,
-             selection_screen_o IMPORTING model TYPE REF TO report_model,
-             selection_screen   IMPORTING model TYPE REF TO report_model,
-             end_of_selection   IMPORTING model TYPE REF TO report_model,
-             display_tree       IMPORTING model TYPE REF TO report_model,
-             const_tree         IMPORTING model TYPE REF TO report_model,
-             eventos_alv        IMPORTING model TYPE REF TO report_model,
-             preencher_tree     IMPORTING model TYPE REF TO report_model,
-             set_toolbar,
-             set_fieldcat       IMPORTING model    TYPE REF TO report_model,
-             add_node           IMPORTING node_key TYPE salv_de_node_key
+      selection_screen_o,
+      selection_screen,
+      end_of_selection   IMPORTING model TYPE REF TO report_model,
+      display_tree       IMPORTING model TYPE REF TO report_model,
+      const_tree         IMPORTING model TYPE REF TO report_model,
+      eventos_alv,
+      preencher_tree     IMPORTING model TYPE REF TO report_model,
+      set_toolbar        IMPORTING model TYPE REF TO report_model,
+      set_fieldcat,
+      add_node           IMPORTING node_key TYPE salv_de_node_key
                                    tipo     TYPE ekpo-ebeln
                                    model    TYPE REF TO report_model.
 
@@ -60,18 +64,19 @@ CLASS report_view IMPLEMENTATION.
 
   METHOD end_of_selection.
 
-    me->eventos_alv( model ).
+*    me->eventos_alv( model ).
     me->const_tree( model ).
 
   ENDMETHOD.
 
   METHOD const_tree.
+
     TRY.
         CALL METHOD cl_salv_tree=>factory
           IMPORTING
             r_salv_tree = salv_tree
           CHANGING
-            t_table     = model->tree.
+            t_table     = model->tree_table.
       CATCH cx_salv_error .
         LEAVE LIST-PROCESSING.
     ENDTRY.
@@ -88,19 +93,24 @@ CLASS report_view IMPLEMENTATION.
     salv_settings->set_header( 'Relatorio Migo - Miro' ).
     salv_settings->set_hierarchy_header( 'Fornecedor' ).
     salv_settings->set_hierarchy_size( 50 ).
-
     salv_tree->set_screen_status( pfstatus = 'ZSTATUS'
                                   report = sy-repid
                                   set_functions = salv_tree->c_functions_all ).
 
+    DATA: lr_functions TYPE REF TO cl_salv_functions_tree.
+
+    lr_functions = salv_tree->get_functions( ).
+    lr_functions->set_all( gc_true ).
+
     o_events_tree = salv_tree->get_event( ).
-    SET HANDLER model->added_function for o_events_tree.
+    SET HANDLER model->added_function FOR o_events_tree.
 
     salv_tree->display( ).
 
   ENDMETHOD.
 
   METHOD preencher_tree.
+
     TRY .
         lo_nodes = salv_tree->get_nodes( ).
         LOOP AT model->it_table INTO model->st_table.
@@ -109,7 +119,12 @@ CLASS report_view IMPLEMENTATION.
           lo_node = lo_nodes->add_node( related_node = ''
                                         text = texto
                                         relationship = '' ).
+
           key = lo_node->get_key( ).
+
+*          lo_item = lo_node->get_hierarchy_item( ).
+*          lo_item->set_type( if_salv_c_item_type=>checkbox ).
+*          lo_item->set_editable( abap_true ).
 
           tipo1 = model->st_table-ebelp.
 
@@ -125,32 +140,34 @@ CLASS report_view IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD add_node.
-    DATA: prev TYPE ekpo-ebeln.
+
+    DATA: prev  TYPE ekpo-ebeln,
+          prev1 TYPE ekpo-ebelp.
+
     LOOP AT model->it_table INTO model->st_table WHERE ebeln = tipo.
-
-      texto = |Pedido { model->st_table-ebeln }|.
-
-      lo_node = lo_nodes->add_node( related_node = node_key
-                                    text = texto
-                                    relationship = cl_gui_column_tree=>relat_first_child
-                                    data_row = model->st_table ).
-
-      key = lo_node->get_key( ).
-      LOOP AT model->it_table INTO model->st_table WHERE ebelp = tipo1.
-        texto = |Item Do Pedido { model->st_table-ebelp }|.
+        texto = |Pedido { model->st_table-ebeln }|.
         lo_node = lo_nodes->add_node( related_node = node_key
                                       text = texto
-                                      relationship = cl_gui_column_tree=>relat_last_child ).
+                                      relationship = cl_gui_column_tree=>relat_first_child
+                                      data_row = model->st_table ).
+      key = lo_node->get_key( ).
+
+      LOOP AT model->it_table INTO model->st_table WHERE ebelp = tipo1.
+        IF prev1 <> model->st_table-ebelp.
+          texto = |Item Do Pedido { model->st_table-ebelp }|.
+          lo_node = lo_nodes->add_node( related_node = node_key
+                                        text = texto
+                                        relationship = cl_gui_column_tree=>relat_last_child ).
+        ELSE.
+          CONTINUE.
+        ENDIF.
+        prev1 = model->st_table-ebelp.
       ENDLOOP.
     ENDLOOP.
 
   ENDMETHOD.
 
   METHOD set_toolbar.
-
-*    DATA: functions TYPE REF TO cl_salv_functions_list.
-*    functions = salv_alv->get_functions( ).
-*    functions->set_default( ).
 
   ENDMETHOD.
 
@@ -159,25 +176,6 @@ CLASS report_view IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD eventos_alv.
-
-*    FIELD-SYMBOLS: <f_events> TYPE slis_alv_event.
-*    CLEAR: model->t_events.
-*
-*    CALL FUNCTION 'REUSE_ALV_EVENTS_GET'
-**    EXPORTING
-**      i_list_type = 0
-*      IMPORTING
-*        et_events = model->t_events.
-*
-*    IF sy-subrc EQ 0.
-*
-*      READ TABLE model->t_events WITH KEY name = slis_ev_user_command
-*                                                 ASSIGNING <f_events>.
-*      IF sy-subrc EQ 0.
-*        <f_events>-form = 'USER_COMMAND'.
-*      ENDIF.
-*
-*    ENDIF.
 
   ENDMETHOD.
 
