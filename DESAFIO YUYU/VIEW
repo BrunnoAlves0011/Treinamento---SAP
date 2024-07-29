@@ -28,10 +28,7 @@ CLASS report_view DEFINITION.
       end_of_selection   IMPORTING model TYPE REF TO report_model,
       display_tree       IMPORTING model TYPE REF TO report_model,
       const_tree         IMPORTING model TYPE REF TO report_model,
-      eventos_alv,
       preencher_tree     IMPORTING model TYPE REF TO report_model,
-      set_toolbar        IMPORTING model TYPE REF TO report_model,
-      set_fieldcat,
       add_node           IMPORTING node_key TYPE salv_de_node_key
                                    tipo     TYPE ekpo-ebeln
                                    model    TYPE REF TO report_model.
@@ -42,10 +39,6 @@ CLASS report_view IMPLEMENTATION.
 
   METHOD initialization.
 
-*    filt = '@4G@ Filtros'.
-*    modi = '@17@ Criação/Modificação'.
-*    mod_btn = '@2L@ Salvar'.
-
   ENDMETHOD.
 
   METHOD selection_screen_o.
@@ -53,18 +46,11 @@ CLASS report_view IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD selection_screen.
-*    CASE sy-ucomm.
-*      WHEN 'MOD_REG'.
-*
-*        model->init_modify_met( ).
-*
-*      WHEN OTHERS.
-*    ENDCASE.
+
   ENDMETHOD.
 
   METHOD end_of_selection.
 
-*    me->eventos_alv( model ).
     me->const_tree( model ).
 
   ENDMETHOD.
@@ -164,18 +150,6 @@ CLASS report_view IMPLEMENTATION.
         prev1 = model->st_table-ebelp.
       ENDLOOP.
     ENDLOOP.
-
-  ENDMETHOD.
-
-  METHOD set_toolbar.
-
-  ENDMETHOD.
-
-  METHOD set_fieldcat.
-
-  ENDMETHOD.
-
-  METHOD eventos_alv.
 
   ENDMETHOD.
 
