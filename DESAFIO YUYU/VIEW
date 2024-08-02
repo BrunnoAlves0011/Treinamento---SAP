@@ -8,46 +8,26 @@ CLASS report_view DEFINITION.
 
     CONSTANTS: gc_true  TYPE sap_bool VALUE 'X'.
 
-    DATA: salv_alv TYPE REF TO cl_salv_table,
-          o_events TYPE REF TO cl_salv_events_table.
-
     DATA: lo_nodes      TYPE REF TO cl_salv_nodes,
           lo_node       TYPE REF TO cl_salv_node,
           salv_settings TYPE REF TO cl_salv_tree_settings,
-          o_events_tree TYPE REF TO cl_salv_events_tree,
-          lo_item       TYPE REF TO cl_salv_item.
+          o_events_tree TYPE REF TO cl_salv_events_tree.
 
     DATA: texto      TYPE lvc_value,
           key        TYPE salv_de_node_key,
-          tipo1      TYPE ekpo-ebelp,
-          p_node_key TYPE lvc_nkey.
+          tipo1      TYPE ekpo-ebelp.
 
-    METHODS: initialization,
-      selection_screen_o,
-      selection_screen,
-      end_of_selection   IMPORTING model TYPE REF TO report_model,
-      display_tree       IMPORTING model TYPE REF TO report_model,
-      const_tree         IMPORTING model TYPE REF TO report_model,
-      preencher_tree     IMPORTING model TYPE REF TO report_model,
-      add_node           IMPORTING node_key TYPE salv_de_node_key
-                                   tipo     TYPE ekpo-ebeln
-                                   model    TYPE REF TO report_model.
+    METHODS: end_of_selection   IMPORTING model TYPE REF TO report_model,
+             display_tree       IMPORTING model TYPE REF TO report_model,
+             const_tree         IMPORTING model TYPE REF TO report_model,
+             preencher_tree     IMPORTING model TYPE REF TO report_model,
+             add_node           IMPORTING node_key TYPE salv_de_node_key
+                                          tipo     TYPE ekpo-ebeln
+                                          model    TYPE REF TO report_model.
 
 ENDCLASS.
 
 CLASS report_view IMPLEMENTATION.
-
-  METHOD initialization.
-
-  ENDMETHOD.
-
-  METHOD selection_screen_o.
-
-  ENDMETHOD.
-
-  METHOD selection_screen.
-
-  ENDMETHOD.
 
   METHOD end_of_selection.
 
@@ -87,6 +67,7 @@ CLASS report_view IMPLEMENTATION.
 
     lr_functions = salv_tree->get_functions( ).
     lr_functions->set_all( gc_true ).
+    salv_tree->get_columns( )->get_column( 'LIFNR' )->set_visible( abap_false ).
 
     o_events_tree = salv_tree->get_event( ).
     SET HANDLER model->added_function FOR o_events_tree.
@@ -107,10 +88,6 @@ CLASS report_view IMPLEMENTATION.
                                         relationship = '' ).
 
           key = lo_node->get_key( ).
-
-*          lo_item = lo_node->get_hierarchy_item( ).
-*          lo_item->set_type( if_salv_c_item_type=>checkbox ).
-*          lo_item->set_editable( abap_true ).
 
           tipo1 = model->st_table-ebelp.
 

@@ -29,19 +29,13 @@ CLASS report_controller IMPLEMENTATION.
 
   METHOD initialization.
 
-    me->view->initialization( ).
-
   ENDMETHOD.
 
   METHOD selection_screen_o.
 
-    me->view->selection_screen_o( ).
-
   ENDMETHOD.
 
   METHOD selection_screen.
-
-    me->view->selection_screen( ).
 
   ENDMETHOD.
 

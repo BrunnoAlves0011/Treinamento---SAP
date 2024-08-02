@@ -23,6 +23,8 @@ CLASS report_model DEFINITION.
              ebeln TYPE mseg-ebeln,
              bwart TYPE mseg-bwart,
              smbln TYPE mseg-smbln,
+             zeile TYPE mseg-zeile,
+             mjahr TYPE mseg-mjahr,
            END OF lt_validate.
 
     TYPES: BEGIN OF ty_saida,
@@ -35,6 +37,7 @@ CLASS report_model DEFINITION.
              menge TYPE ekpo-menge,
              matnr TYPE ekpo-matnr,
              bukrs TYPE ekko-bukrs,
+             waers TYPE ekko-waers,
              netwr TYPE ekpo-netwr,
            END OF ty_saida.
 
@@ -64,16 +67,16 @@ CLASS report_model DEFINITION.
           ls_gm_ret  TYPE bapi2017_gm_head_02.
 
     METHODS: start_of_selection,
-             select_dados,
-             validate_miro IMPORTING valor TYPE ekpo-ebeln,
-             validate_migo IMPORTING valor TYPE ekpo-ebeln,
-             criar_migo,
-             criar_miro,
-             estornar_migo,
-             estornar_miro,
-             added_function   FOR EVENT added_function OF cl_salv_events_tree
-                              IMPORTING e_salv_function,
-             mensagens IMPORTING valor TYPE c.
+      select_dados,
+      validate_miro IMPORTING valor TYPE ekpo-ebeln,
+      validate_migo IMPORTING valor TYPE ekpo-ebeln,
+      criar_migo,
+      criar_miro,
+      estornar_migo,
+      estornar_miro,
+      added_function   FOR EVENT added_function OF cl_salv_events_tree
+        IMPORTING e_salv_function,
+      mensagens IMPORTING valor TYPE c.
 
 ENDCLASS.
 
@@ -87,7 +90,7 @@ CLASS report_model IMPLEMENTATION.
 
   METHOD select_dados.
 
-    SELECT ekko~aedat, ekpo~ebeln, ekpo~ebelp, ekpo~werks, ekpo~lgort, ekpo~meins, ekpo~menge, ekpo~matnr, ekko~bukrs, ekpo~NETWR
+    SELECT ekko~aedat, ekpo~ebeln, ekpo~ebelp, ekpo~werks, ekpo~lgort, ekpo~meins, ekpo~menge, ekpo~matnr, ekko~bukrs, ekko~waers, ekpo~netwr
       FROM ekpo
       INNER JOIN ekko ON ekko~ebeln = ekpo~ebeln
       WHERE ekko~aedat IN @fil_per
@@ -115,7 +118,7 @@ CLASS report_model IMPLEMENTATION.
 
     DATA: pedido      TYPE ekpo-ebeln.
 
-    SELECT mseg~mblnr, mseg~ebeln, mseg~bwart, mseg~smbln
+    SELECT mseg~mblnr, mseg~ebeln, mseg~bwart, mseg~smbln, mseg~zeile, mseg~mjahr
          FROM mseg
          INNER JOIN mkpf ON mseg~mblnr = mkpf~mblnr
          WHERE mseg~ebeln = @valor
@@ -137,7 +140,7 @@ CLASS report_model IMPLEMENTATION.
   METHOD validate_migo.
     CLEAR: it_validate.
 
-    SELECT mseg~mblnr, mseg~ebeln, mseg~bwart, mseg~smbln
+    SELECT mseg~mblnr, mseg~ebeln, mseg~bwart, mseg~smbln, mseg~zeile, mseg~mjahr
       FROM mseg
       INNER JOIN mkpf ON mseg~mblnr = mkpf~mblnr
       WHERE mseg~ebeln = @valor
@@ -225,7 +228,7 @@ CLASS report_model IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD criar_migo.
-    CLEAR: wa_saida, lt_gm, ls_mmdochdr, lt_ret.
+    CLEAR: lt_gm, ls_mmdochdr, lt_ret.
 
     DATA: valor   TYPE ekpo-ebeln.
 
@@ -249,11 +252,11 @@ CLASS report_model IMPLEMENTATION.
           ls_gm-po_item        = st_saida-ebelp.
           ls_gm-ref_doc        = st_saida-ebeln.
           ls_gm-ref_doc_it     = st_saida-ebelp.
-          IF st_saida-menge = ' ' OR st_saida-menge = '0'.
+*          IF st_saida-menge = ' ' or st_saida-menge = '0'.
             ls_gm-entry_qnt      = '1'.
-          ELSE.
-            ls_gm-entry_qnt  = st_saida-menge.
-          ENDIF.
+*          ELSE.
+*            ls_gm-entry_qnt    = st_saida-menge.
+*          ENDIF.
           ls_gm-entry_uom      = st_saida-meins.
           ls_gm-stge_loc       = st_saida-lgort.
           ls_gm-plant          = st_saida-werks.
@@ -262,6 +265,7 @@ CLASS report_model IMPLEMENTATION.
           ls_gm-move_type      = '101'.
           ls_gm-mvt_ind        = 'B'.
           ls_mmdochdr-doc_date = st_saida-aedat.
+          ls_mmdochdr-ref_doc_no = st_saida-ebeln.
           APPEND ls_gm TO lt_gm.
           EXIT.
         ELSE.
@@ -284,31 +288,31 @@ CLASS report_model IMPLEMENTATION.
           goodsmvt_item    = lt_gm
           return           = lt_ret.
 
-      CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
-        EXPORTING
-          wait = 'X'.
-      CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
-
-      IF lt_ret IS INITIAL.
-        READ TABLE lt_ret INTO ls_ret INDEX 1.
-        IF ls_ret-message = ''.
-          MESSAGE |Migo Criada!| TYPE 'I'.
-        ELSE.
-          DATA(mensagem) = ls_ret-message.
-          MESSAGE mensagem TYPE 'I'.
-        ENDIF.
+      IF lt_docyear IS INITIAL.
+        CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
+      ELSE.
+        CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'.
       ENDIF.
 
+      IF lt_ret IS INITIAL.
+        MESSAGE |Migo Criada! { lt_matdoc }  Ano: { lt_docyear }| TYPE 'I'.
+      ELSE.
+        READ TABLE lt_ret INTO ls_ret INDEX 1.
+        DATA(mensagem) = ls_ret-message.
+        MESSAGE mensagem TYPE 'I'.
+      ENDIF.
     ENDIF.
 
   ENDMETHOD.
 
   METHOD criar_miro.
     CLEAR: lt_ret, lt_gmr.
+    CONSTANTS c_x TYPE c VALUE 'X'.
 
-    DATA: valor      TYPE ekpo-ebeln,
+    DATA: valor      TYPE ekpo-ebelp,
           fiscalyear TYPE bapi_incinv_fld-fisc_year,
-          docnumber  TYPE bapi_incinv_fld-inv_doc_no.
+          docnumber  TYPE bapi_incinv_fld-inv_doc_no,
+          valor1     TYPE ekpo-ebeln.
 
     DATA(selected_line) = salv_tree->get_selections( )->get_selected_nodes( ).
 
@@ -323,46 +327,39 @@ CLASS report_model IMPLEMENTATION.
 
       wa_saida = <line>.
 
-      valor = wa_saida-ebeln.
-      me->validate_miro( valor ).
+      valor = wa_saida-ebelp.
+      valor1 = wa_saida-ebeln.
+      me->validate_miro( valor1 ).
 
       LOOP AT it_saida INTO st_saida.
-        IF st_saida-ebeln = valor.
-          ls_gmr-invoice_doc_item = '1'.
+        IF st_saida-ebelp = valor AND st_saida-ebeln = valor1.
+          READ TABLE it_validate INTO st_validate INDEX 1.
+          ls_gmr-invoice_doc_item = st_saida-ebelp.
           ls_gmr-po_number        = st_saida-ebeln.
           ls_gmr-po_item          = st_saida-ebelp.
-          ls_gmr-item_amount      = st_saida-netwr.
-          ls_gmr-ref_doc          = '4500000804'.
-          ls_gmr-ref_doc_year     = '2024'.
-          ls_gmr-ref_doc_it       = '10'.
-          ls_gmr-de_cre_ind       = 'X'.
-          ls_gmr-tax_code         = 'VX'.
+*          ls_gmr-ref_doc          = st_validate-mblnr.
+*          ls_gmr-ref_doc_year     = st_validate-mjahr.
+*          ls_gmr-ref_doc_it       = st_saida-ebelp.
+*          ls_gmr-de_cre_ind       = 'X'.
+          ls_gmr-po_pr_qnt        = st_saida-menge.
           ls_gmr-quantity         = st_saida-menge.
           ls_gmr-po_unit          = st_saida-meins.
-          ls_gmr-final_inv        = 'X'.
+          ls_gmr-item_amount      = '1'.
+          ls_gmr-tax_code         = 'C0'.
           ls_mrhdr-comp_code      = st_saida-bukrs.
+          ls_mrhdr-currency       = st_saida-waers.
+          ls_mrhdr-ref_doc_no     = st_validate-mblnr.
           APPEND ls_gmr TO lt_gmr.
+          EXIT.
         ENDIF.
       ENDLOOP.
 
-      LOOP AT it_table INTO st_table.
-        IF st_table-ebeln = valor.
-          ls_mrhdr-diff_inv = st_table-lifnr.
-        ENDIF.
-      ENDLOOP.
-
-      ls_mrhdr-invoice_ind = 'X'.
-      ls_mrhdr-doc_type = 'RE'.
-      ls_mrhdr-doc_date = '20240201'.
-      ls_mrhdr-pstng_date = '20240201'.
-      ls_mrhdr-ref_doc_no = '4500000804'.
-      ls_mrhdr-inv_year = '2024'.
-      ls_mrhdr-currency = 'BRL'.
-      ls_mrhdr-header_txt = 'ghghgsdfh'.
-      ls_mrhdr-inv_rec_date = '20240201'.
-      ls_mrhdr-pymt_meth = '1'.
-*      ls_mrhdr-PMNTTRMS
-      ls_mrhdr-gross_amount = '1000.00'.
+      ls_mrhdr-invoice_ind    = 'X'.
+      ls_mrhdr-doc_type       = 'RE'.
+      ls_mrhdr-doc_date       = '20240301'.
+      ls_mrhdr-pstng_date     = '20240301'.
+      ls_mrhdr-pmnttrms       = '0001'.
+*      ls_mrhdr-simulation     = c_x.
 
       CALL FUNCTION 'BAPI_INCOMINGINVOICE_CREATE'
         EXPORTING
@@ -374,14 +371,19 @@ CLASS report_model IMPLEMENTATION.
           itemdata         = lt_gmr
           return           = lt_ret.
 
-      CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
-        EXPORTING
-          wait = 'X'.
-      CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
+      IF docnumber IS INITIAL.
+        CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
+      ELSE.
+        CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'.
+      ENDIF.
 
-      READ TABLE lt_ret INTO ls_ret INDEX 1.
-      DATA(mensagem) = ls_ret-message.
-      MESSAGE mensagem TYPE 'I'.
+      IF lt_ret IS INITIAL.
+        MESSAGE |MIRO: { docnumber }  Ano fiscal: { fiscalyear }| TYPE 'I'.
+      ELSE.
+        READ TABLE lt_ret INTO ls_ret INDEX 1.
+        DATA(mensagem) = ls_ret-message.
+        MESSAGE mensagem TYPE 'I'.
+      ENDIF.
     ENDIF.
 
     EXIT.
