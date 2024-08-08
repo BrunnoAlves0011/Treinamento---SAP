@@ -1,0 +1,110 @@
+*&---------------------------------------------------------------------*
+*& Report YTESTES_BH_01
+*&---------------------------------------------------------------------*
+*& Feito a partir do Desafio 1
+*&---------------------------------------------------------------------*
+REPORT ytestes_bh_01.
+
+TABLES: kna1, vbak.
+
+DATA: go_alv TYPE REF TO cl_salv_table.
+
+TYPES: BEGIN OF ty_saida,
+         kunnr TYPE kna1-kunnr,
+         name1 TYPE kna1-name1,
+         brgew TYPE vbap-brgew,
+         netwr TYPE vbap-netwr,
+         erdat TYPE vbak-erdat,
+       END OF ty_saida,
+
+       BEGIN OF ty_kna1,
+         kunnr TYPE kna1-kunnr,
+         name1 TYPE kna1-name1,
+       END OF ty_kna1,
+
+       BEGIN OF ty_vbap,
+         brgew TYPE vbap-brgew,
+         netwr TYPE vbap-netwr,
+         vbeln TYPE vbap-vbeln,
+       END OF ty_vbap,
+
+       BEGIN OF ty_vbak,
+         erdat TYPE vbak-erdat,
+         vbeln TYPE vbak-vbeln,
+         kunnr TYPE vbak-kunnr,
+       END OF ty_vbak.
+
+DATA: lt_table TYPE TABLE OF ty_saida,
+      lt_kna1  TYPE TABLE OF ty_kna1,
+      lt_vbap  TYPE TABLE OF ty_vbap,
+      lt_vbak  TYPE TABLE OF ty_vbak.
+
+DATA: wa_table TYPE ty_saida,
+      wa_kna1  TYPE ty_kna1,
+      wa_vbap  TYPE ty_vbap,
+      wa_vbak  TYPE ty_vbak.
+
+FIELD-SYMBOLS: <ls_result> TYPE ty_saida.
+
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
+
+SELECT-OPTIONS: s_kunnr FOR kna1-kunnr,
+                s_erdat FOR vbak-erdat.
+
+SELECTION-SCREEN END OF BLOCK b1.
+
+END-OF-SELECTION.
+  PERFORM for_all_entries.
+
+  TRY.
+      cl_salv_table=>factory(
+        IMPORTING
+          r_salv_table = go_alv
+        CHANGING
+          t_table      = lt_table ).
+
+    CATCH cx_salv_msg.
+  ENDTRY.
+
+  go_alv->display( ).
+
+FORM for_all_entries.
+
+  BREAK-POINT.
+
+  SELECT erdat, vbeln, kunnr
+    FROM vbak
+    INTO TABLE @lt_vbak
+    WHERE kunnr IN @s_kunnr
+    AND   erdat IN @s_erdat.
+
+  SELECT kunnr name1
+    FROM kna1
+    INTO TABLE lt_kna1
+    FOR ALL ENTRIES IN lt_vbak
+    WHERE kunnr = lt_vbak-kunnr.
+
+  SELECT brgew, netwr, vbeln
+    FROM vbap
+    INTO TABLE @lt_vbap
+    FOR ALL ENTRIES IN @lt_vbak
+    WHERE vbeln = @lt_vbak-vbeln.
+
+  LOOP AT lt_vbak INTO wa_vbak.
+
+    READ TABLE lt_kna1 INTO wa_kna1 WITH KEY kunnr = wa_vbak-kunnr.
+    READ TABLE lt_vbap INTO wa_vbap WITH KEY vbeln = wa_vbak-vbeln.
+
+    wa_table-kunnr = wa_vbak-kunnr.
+    wa_table-name1 = wa_kna1-name1.
+    wa_table-brgew = wa_vbap-brgew.
+    wa_table-netwr = wa_vbap-netwr.
+    wa_table-erdat = wa_vbak-erdat.
+
+    APPEND wa_table TO lt_table.
+
+    CLEAR: wa_table.
+
+  ENDLOOP.
+
+ENDFORM.

@@ -1,0 +1,202 @@
+*&---------------------------------------------------------------------*
+*& Report YTESTES_BH_02
+*&---------------------------------------------------------------------*
+*& Feito a partir do Desafio 5
+*&---------------------------------------------------------------------*
+REPORT ytestes_bh_02.
+
+DATA: go_alv TYPE REF TO cl_salv_table.
+
+TABLES: adrc, kna1, t005u, vbak, vbap, vbfa, likp, lips, vttp, vttk.
+
+TYPES: BEGIN OF ty_saida,
+         icon   TYPE char4,
+         region TYPE adrc-region,
+         bezei  TYPE t005u-bezei,
+         city1  TYPE adrc-city1,
+         brgew  TYPE vbap-brgew,
+         netwr  TYPE vbap-netwr,
+       END OF ty_saida,
+
+       BEGIN OF ty_adrc,
+         region     TYPE adrc-region,
+         city1      TYPE adrc-city1,
+         addrnumber TYPE adrc-addrnumber,
+       END OF ty_adrc,
+
+       BEGIN OF ty_kna1,
+         kunnr TYPE kna1-kunnr,
+         regio TYPE kna1-regio,
+         adrnr TYPE kna1-adrnr,
+       END OF ty_kna1,
+
+       BEGIN OF ty_vbap,
+         brgew TYPE vbap-brgew,
+         netwr TYPE vbap-netwr,
+         vbeln TYPE vbap-vbeln,
+       END OF ty_vbap,
+
+       BEGIN OF ty_t005u,
+         bland TYPE t005u-bland,
+         bezei TYPE t005u-bezei,
+       END OF ty_t005u,
+
+       BEGIN OF ty_vbak,
+         vbeln TYPE vbak-vbeln,
+         kunnr TYPE vbak-kunnr,
+       END OF ty_vbak,
+
+       BEGIN OF ty_vbfa,
+         vbeln TYPE vbfa-vbeln,
+       END OF ty_vbfa,
+
+       BEGIN OF ty_likp,
+         vbeln TYPE likp-vbeln,
+       END OF ty_likp,
+
+       BEGIN OF ty_lips,
+         vbeln TYPE lips-vbeln,
+       END OF ty_lips,
+
+       BEGIN OF ty_vttp,
+         tknum TYPE vttp-tknum,
+       END OF ty_vttp,
+
+       BEGIN OF ty_vttk,
+         tknum TYPE vttk-tknum,
+       END OF ty_vttk.
+
+DATA: lt_table TYPE TABLE OF ty_saida,
+      lt_adrc  TYPE TABLE OF ty_adrc,
+      lt_kna1  TYPE TABLE OF ty_kna1,
+      lt_t005u TYPE TABLE OF ty_t005u,
+      lt_vbak  TYPE TABLE OF ty_vbak,
+      lt_vbap  TYPE TABLE OF ty_vbap,
+      lt_vbfa  TYPE TABLE OF ty_vbfa,
+      lt_likp  TYPE TABLE OF ty_likp,
+      lt_lips  TYPE TABLE OF ty_lips,
+      lt_vttp  TYPE TABLE OF ty_vttp,
+      lt_vttk  TYPE TABLE OF ty_vttk.
+
+DATA: wa_table TYPE ty_saida,
+      wa_adrc  TYPE ty_adrc,
+      wa_kna1  TYPE ty_kna1,
+      wa_t005u TYPE ty_t005u,
+      wa_vbak  TYPE ty_vbak,
+      wa_vbap  TYPE ty_vbap,
+      wa_vbfa  TYPE ty_vbfa,
+      wa_likp  TYPE ty_likp,
+      wa_lips  TYPE ty_lips,
+      wa_vttp  TYPE ty_vttp,
+      wa_vttk  TYPE ty_vttk.
+
+FIELD-SYMBOLS: <ls_result> TYPE ty_saida.
+
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
+
+SELECT-OPTIONS: s_region FOR adrc-region,
+                s_city   FOR adrc-city1,
+                s_erdat  FOR vbak-erdat.
+
+SELECTION-SCREEN END OF BLOCK b1.
+
+END-OF-SELECTION.
+  PERFORM for_all_entries.
+  TRY.
+        cl_salv_table=>factory(
+          IMPORTING
+            r_salv_table = go_alv
+          CHANGING
+            t_table      = lt_table ).
+
+      CATCH cx_salv_msg.
+    ENDTRY.
+
+    go_alv->display( ).
+
+FORM for_all_entries.
+
+  BREAK-POINT.
+
+  SELECT region, city1, addrnumber
+    FROM adrc
+    INTO TABLE @lt_adrc
+    WHERE region IN @s_region
+    AND   city1  IN @s_city.
+
+  SELECT kunnr, regio, adrnr
+    FROM kna1
+    INTO TABLE @lt_kna1
+    FOR ALL ENTRIES IN @lt_adrc
+    WHERE adrnr = @lt_adrc-addrnumber.
+
+  SELECT bland bezei
+    FROM t005u
+    INTO TABLE lt_t005u
+    FOR ALL ENTRIES IN lt_kna1
+    WHERE bland = lt_kna1-regio.
+
+  SELECT vbeln kunnr
+    FROM vbak
+    INTO TABLE lt_vbak
+    FOR ALL ENTRIES IN lt_kna1
+    WHERE kunnr = lt_kna1-kunnr
+    AND   erdat IN s_erdat.
+
+  SELECT brgew, netwr, vbeln
+    FROM vbap
+    INTO TABLE @lt_vbap
+    FOR ALL ENTRIES IN @lt_vbak
+    WHERE vbeln = @lt_vbak-vbeln.
+
+  SELECT vbeln
+    FROM vbfa
+    INTO TABLE lt_vbfa
+    FOR ALL ENTRIES IN lt_vbap
+    WHERE vbeln = lt_vbap-vbeln.
+
+  SELECT vbeln
+    FROM likp
+    INTO TABLE lt_likp
+    FOR ALL ENTRIES IN lt_vbfa
+    WHERE vbeln = lt_vbfa-vbeln.
+
+  SELECT vbeln
+    FROM lips
+    INTO TABLE lt_lips
+    FOR ALL ENTRIES IN lt_likp
+    WHERE vbeln = lt_likp-vbeln.
+
+  SELECT tknum
+    FROM vttp
+    INTO TABLE lt_vttp
+    FOR ALL ENTRIES IN lt_lips
+    WHERE vbeln = lt_lips-vbeln.
+
+  SELECT tknum
+    FROM vttk
+    INTO TABLE lt_vttk
+    FOR ALL ENTRIES IN lt_vttp
+    WHERE tknum = lt_vttp-tknum.
+
+  LOOP AT lt_adrc INTO wa_adrc.
+
+    READ TABLE lt_kna1  INTO wa_kna1  WITH KEY adrnr = wa_adrc-addrnumber.
+    READ TABLE lt_t005u INTO wa_t005u WITH KEY bland = wa_kna1-regio.
+    READ TABLE lt_vbak  INTO wa_vbak  WITH KEY kunnr = wa_kna1-kunnr.
+    READ TABLE lt_vbap  INTO wa_vbap  WITH KEY vbeln = wa_vbak-vbeln.
+
+    wa_table-icon = '@1A@'.
+    wa_table-region = wa_adrc-region.
+    wa_table-bezei = wa_t005u-bezei.
+    wa_table-city1 = wa_adrc-city1.
+    wa_table-brgew = wa_vbap-brgew.
+    wa_table-netwr = wa_vbap-netwr.
+
+    APPEND wa_table TO lt_table.
+
+    CLEAR: wa_table.
+
+  ENDLOOP.
+
+ENDFORM.
