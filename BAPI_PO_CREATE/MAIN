@@ -1,0 +1,34 @@
+*--------------------------------------------------------------------*
+* Report ytestes_bh_04                                        *
+*--------------------------------------------------------------------*
+*                                                                    *
+*--------------------------------------------------------------------*
+REPORT ytestes_bh_04.
+
+DATA: salv_tree TYPE REF TO cl_salv_tree.
+
+INCLUDE YTESTES_BH_04_IN_SCR.
+
+INCLUDE YTESTES_BH_04_IN_MODEL.
+
+INCLUDE YTESTES_BH_04_IN_VIEW.
+
+INCLUDE YTESTES_BH_04_IN_CONTROLLER.
+
+DATA: gc_controller TYPE REF TO report_controller.
+
+INITIALIZATION.
+  CREATE OBJECT gc_controller.
+  gc_controller->initialization( ).
+
+AT SELECTION-SCREEN OUTPUT.
+  gc_controller->selection_screen_o( ).
+
+AT SELECTION-SCREEN.
+  gc_controller->selection_screen( ).
+
+START-OF-SELECTION.
+  gc_controller->start_of_selection( ).
+
+END-OF-SELECTION.
+  gc_controller->end_of_selection( ).

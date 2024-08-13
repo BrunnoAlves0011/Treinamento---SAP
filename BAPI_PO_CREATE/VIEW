@@ -1,0 +1,115 @@
+*&---------------------------------------------------------------------*
+*& Include          YDESAFIOYUYU_BH_IN_VIEW
+*&---------------------------------------------------------------------*
+
+CLASS report_view DEFINITION.
+
+  PUBLIC SECTION.
+
+    CONSTANTS: gc_true  TYPE sap_bool VALUE 'X'.
+
+    DATA: lo_nodes      TYPE REF TO cl_salv_nodes,
+          lo_node       TYPE REF TO cl_salv_node,
+          salv_settings TYPE REF TO cl_salv_tree_settings,
+          o_events_tree TYPE REF TO cl_salv_events_tree.
+
+    DATA: texto      TYPE lvc_value,
+          key        TYPE salv_de_node_key,
+          tipo1      TYPE eban-BNFPO.
+
+    METHODS: end_of_selection   IMPORTING model TYPE REF TO report_model,
+             display_tree       IMPORTING model TYPE REF TO report_model,
+             const_tree         IMPORTING model TYPE REF TO report_model,
+             preencher_tree     IMPORTING model TYPE REF TO report_model,
+             add_node           IMPORTING node_key TYPE salv_de_node_key
+                                          tipo     TYPE ekpo-ebelp
+                                          model    TYPE REF TO report_model.
+
+ENDCLASS.
+
+CLASS report_view IMPLEMENTATION.
+
+  METHOD end_of_selection.
+
+    me->const_tree( model ).
+
+  ENDMETHOD.
+
+  METHOD const_tree.
+
+    TRY.
+        CALL METHOD cl_salv_tree=>factory
+          IMPORTING
+            r_salv_tree = salv_tree
+          CHANGING
+            t_table     = model->tree_table.
+      CATCH cx_salv_error .
+        LEAVE LIST-PROCESSING.
+    ENDTRY.
+
+    me->preencher_tree( model ).
+    me->display_tree( model ).
+
+  ENDMETHOD.
+
+  METHOD display_tree.
+
+    salv_settings = salv_tree->get_tree_settings( ).
+
+    salv_settings->set_header( 'Relatorio Migo - Miro' ).
+    salv_settings->set_hierarchy_header( 'Fornecedor' ).
+    salv_settings->set_hierarchy_size( 50 ).
+    salv_tree->set_screen_status( pfstatus = 'ZSTATUS'
+                                  report = sy-repid
+                                  set_functions = salv_tree->c_functions_all ).
+
+    DATA: lr_functions TYPE REF TO cl_salv_functions_tree.
+
+    lr_functions = salv_tree->get_functions( ).
+    lr_functions->set_all( gc_true ).
+*    salv_tree->get_columns( )->get_column( 'LIFNR' )->set_visible( abap_false ).
+
+    o_events_tree = salv_tree->get_event( ).
+    SET HANDLER model->added_function FOR o_events_tree.
+
+    salv_tree->display( ).
+
+  ENDMETHOD.
+
+  METHOD preencher_tree.
+
+    TRY .
+        lo_nodes = salv_tree->get_nodes( ).
+        LOOP AT model->it_table INTO model->st_table.
+
+          texto = |Doc. Compras { model->st_table-ebeln }|.
+          lo_node = lo_nodes->add_node( related_node = ''
+                                        text = texto
+                                        relationship = '' ).
+
+          key = lo_node->get_key( ).
+
+          me->add_node( node_key = key
+                        tipo = model->st_table-ebelp
+                        model = model ).
+
+        ENDLOOP.
+      CATCH cx_salv_msg.
+        LEAVE LIST-PROCESSING.
+    ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD add_node.
+
+*    LOOP AT model->it_table INTO model->st_table WHERE BNFPO = tipo.
+        texto = |Item Req. { model->st_table-ebelp }|.
+        lo_node = lo_nodes->add_node( related_node = node_key
+                                      text = texto
+                                      relationship = cl_gui_column_tree=>relat_first_child
+                                      data_row = model->st_table ).
+*    ENDLOOP.
+
+  ENDMETHOD.
+
+ENDCLASS.

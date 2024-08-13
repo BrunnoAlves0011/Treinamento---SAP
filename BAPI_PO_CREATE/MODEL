@@ -1,0 +1,361 @@
+*&---------------------------------------------------------------------*
+*& Include          YDESAFIOYUYU_BH_IN_MODEL
+*&---------------------------------------------------------------------*
+
+CLASS report_model DEFINITION.
+
+  PUBLIC SECTION.
+
+    TYPES: BEGIN OF ty_table,
+             lifnr TYPE ekko-lifnr,
+             ebeln TYPE ekpo-ebeln,
+             ebelp TYPE ekpo-ebelp,
+           END OF ty_table.
+
+    TYPES: BEGIN OF lt_data,
+             lifnr TYPE ekko-lifnr,
+             ebeln TYPE ekpo-ebeln,
+             ebelp TYPE ekpo-ebelp,
+           END OF lt_data.
+
+    TYPES: BEGIN OF ty_saida,
+             aedat   TYPE ekko-aedat,
+             ebeln   TYPE ekpo-ebeln,
+             ebelp   TYPE ekpo-ebelp,
+             werks   TYPE ekpo-werks,
+             lgort   TYPE ekpo-lgort,
+             meins   TYPE ekpo-meins,
+             menge   TYPE ekpo-menge,
+             matnr   TYPE ekpo-matnr,
+             bukrs   TYPE ekko-bukrs,
+             waers   TYPE ekko-waers,
+             netwr   TYPE ekpo-netwr,
+             bsart   TYPE ekko-bsart,
+             lifnr   TYPE ekko-lifnr,
+             ekorg   TYPE ekko-ekorg,
+             ekgrp   TYPE ekko-ekgrp,
+             banfn   TYPE ekpo-banfn,
+             peinh   TYPE ekpo-peinh,
+             j_1bnbm TYPE ekpo-j_1bnbm,
+           END OF ty_saida.
+
+    TYPES: BEGIN OF ty_ekko,
+             lifnr TYPE ekko-lifnr,
+             aedat TYPE ekko-aedat,
+             bukrs TYPE ekko-bukrs,
+             waers TYPE ekko-waers,
+             ebeln TYPE ekko-ebeln,
+             bsart TYPE ekko-bsart,
+             ekorg TYPE ekko-ekorg,
+             ekgrp TYPE ekko-ekgrp,
+           END OF ty_ekko,
+
+           BEGIN OF ty_ekpo,
+             ebeln   TYPE ekpo-ebeln,
+             ebelp   TYPE ekpo-ebelp,
+             werks   TYPE ekpo-werks,
+             lgort   TYPE ekpo-lgort,
+             meins   TYPE ekpo-meins,
+             menge   TYPE ekpo-menge,
+             matnr   TYPE ekpo-matnr,
+             netwr   TYPE ekpo-netwr,
+             banfn   TYPE ekpo-banfn,
+             peinh   TYPE ekpo-peinh,
+             j_1bnbm TYPE ekpo-j_1bnbm,
+           END OF ty_ekpo.
+
+    DATA: it_ekko TYPE TABLE OF ty_ekko,
+          wa_ekko TYPE ty_ekko,
+          it_ekpo TYPE TABLE OF ty_ekpo,
+          wa_ekpo TYPE ty_ekpo.
+
+    DATA: it_table   TYPE TABLE OF ty_table,
+          st_table   TYPE ty_table,
+          tree_table TYPE STANDARD TABLE OF ty_table,
+          it_saida   TYPE TABLE OF ty_saida,
+          st_saida   TYPE ty_saida,
+          wa_saida   TYPE lt_data.
+
+    DATA: lo_nodes TYPE REF TO cl_salv_nodes.
+
+    DATA: lt_ret TYPE STANDARD TABLE OF bapiret2,
+          ls_ret TYPE bapiret2.
+
+    DATA: st_poheader    TYPE bapimepoheader,
+          st_poheaderx   TYPE bapimepoheaderx,
+          purchaseorder  TYPE bapimepoheader-po_number,
+          bapieikp       TYPE bapieikp,
+          bapimepoheader TYPE bapimepoheader,
+          it_poitem      TYPE TABLE OF bapimepoitem,
+          st_poitem      TYPE bapimepoitem,
+          it_poitemx     TYPE TABLE OF bapimepoitemx,
+          st_poitemx     TYPE bapimepoitemx,
+          it_poitemsche  TYPE TABLE OF bapimeposchedule,
+          st_poitemsche  TYPE bapimeposchedule,
+          it_poitemschex TYPE TABLE OF bapimeposchedulx,
+          st_poitemschex TYPE bapimeposchedulx,
+          it_poaccount   TYPE TABLE OF bapimepoaccount,
+          st_poaccount   TYPE bapimepoaccount,
+          it_poaccountx  TYPE TABLE OF bapimepoaccountx,
+          st_poaccountx  TYPE bapimepoaccountx.
+
+    METHODS: start_of_selection,
+      select_dados,
+      criar_po,
+      added_function   FOR EVENT added_function OF cl_salv_events_tree
+        IMPORTING e_salv_function,
+      mensagens IMPORTING valor TYPE c.
+
+ENDCLASS.
+
+CLASS report_model IMPLEMENTATION.
+
+  METHOD start_of_selection.
+
+    me->select_dados( ).
+
+  ENDMETHOD.
+
+  METHOD select_dados.
+
+    CLEAR: it_ekko, it_ekpo, wa_ekko, wa_ekpo, it_saida, st_saida.
+
+    SELECT lifnr, aedat, bukrs, waers, ebeln, bsart, ekorg, ekgrp
+      FROM ekko
+      INTO TABLE @it_ekko
+      WHERE aedat IN @fil_per
+      AND   ebeln IN @fil_ped
+      AND   lifnr <> ''
+      AND   bukrs <> ''
+      AND   bsart <> ''.
+
+    SELECT ebeln, ebelp, werks, lgort, meins, menge, matnr, netwr, banfn, peinh, j_1bnbm
+      FROM ekpo
+      INTO TABLE @it_ekpo
+      FOR ALL ENTRIES IN @it_ekko
+      WHERE ebeln = @it_ekko-ebeln
+      AND   werks <> ''
+      AND   lgort <> ''.
+
+    LOOP AT it_ekko INTO wa_ekko.
+      LOOP AT it_ekpo INTO wa_ekpo WHERE ebeln = wa_ekko-ebeln.
+
+        st_table-lifnr = wa_ekko-lifnr.
+        st_table-ebeln = wa_ekko-ebeln.
+        st_table-ebelp = wa_ekpo-ebelp.
+        APPEND st_table TO it_table.
+
+        st_saida-aedat = wa_ekko-aedat.
+        st_saida-bukrs = wa_ekko-bukrs.
+        st_saida-ebeln = wa_ekko-ebeln.
+        st_saida-ebelp = wa_ekpo-ebelp.
+        st_saida-lgort = wa_ekpo-lgort.
+        st_saida-matnr = wa_ekpo-matnr.
+        st_saida-meins = wa_ekpo-meins.
+        st_saida-menge = wa_ekpo-menge.
+        st_saida-netwr = wa_ekpo-netwr.
+        st_saida-waers = wa_ekko-waers.
+        st_saida-werks = wa_ekpo-werks.
+        st_saida-banfn = wa_ekpo-banfn.
+        st_saida-peinh = wa_ekpo-peinh.
+        st_saida-bsart = wa_ekko-bsart.
+        st_saida-ekorg = wa_ekko-ekorg.
+        st_saida-ekgrp = wa_ekko-ekgrp.
+        st_saida-lifnr = wa_ekko-lifnr.
+        st_saida-j_1bnbm = wa_ekpo-j_1bnbm.
+        APPEND st_saida TO it_saida.
+
+      ENDLOOP.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD criar_po.
+    CLEAR: st_poheader, it_poitem, it_poitemsche, it_poitemx, st_poheaderx, it_poitemschex, lt_ret.
+
+    DATA: valor   TYPE ekpo-ebeln.
+
+    DATA(selected_line) = salv_tree->get_selections( )->get_selected_nodes( ).
+
+    IF selected_line IS INITIAL.
+      me->mensagens( 'E' ).
+    ELSE.
+      DATA(linha) = selected_line[ 1 ].
+      DATA(data) = linha-node->get_data_row( ).
+
+      FIELD-SYMBOLS: <line> TYPE lt_data.
+      ASSIGN data->* TO <line>.
+
+      wa_saida = <line>.
+
+      valor = wa_saida-ebeln.
+
+      LOOP AT it_saida INTO st_saida.
+        IF st_saida-ebeln = valor.
+*          st_poheader-po_number       = st_saida-ebeln.
+          st_poheader-comp_code       = st_saida-bukrs.
+          st_poheader-doc_type        = 'NB'.
+          st_poheader-doc_date        = sy-datum.
+          st_poheader-creat_date      = sy-datum.
+          st_poheader-vendor          = st_saida-lifnr.
+          st_poheader-purch_org       = st_saida-ekorg.
+          st_poheader-pur_group       = '001'.
+*          st_poheader-suppl_plnt      = st_saida-werks.
+          st_poheader-langu           = sy-langu.
+*          st_poheader-currency        = 'BRL'.
+
+          st_poitem-po_item           = st_saida-ebelp.
+          st_poitemx-po_item          = st_saida-ebelp.
+          st_poitem-material          = st_saida-matnr.
+          st_poitem-plant             = st_saida-werks.
+          st_poitem-stge_loc          = st_saida-lgort.
+          st_poitem-quantity          = st_saida-menge.
+          st_poitem-tax_code          = 'C0'.
+          st_poitem-final_inv         = 'X'.
+*          st_poitem-preq_no           = st_saida-banfn.
+*          st_poitem-price_unit        = '1'.
+*          st_poitem-po_unit           = st_saida-meins.
+          st_poitem-bras_nbm          = st_saida-j_1bnbm.
+          st_poitem-net_price         = '10'.
+          st_poitem-acctasscat        = 'F'.
+*          st_poitem-matl_usage        = '0'.
+*          st_poitem-mat_origin        = '0'.
+*          st_poitem-indus3            = '00'.
+
+*          st_poaccount-po_item        = st_saida-ebelp.
+*          st_poaccountx-po_item       = st_saida-ebelp.
+*          st_poaccount-creat_date     = sy-datum.
+*          st_poaccount-quantity       = st_saida-menge.
+*          st_poaccount-gl_account     = '51100000'.
+*          st_poaccount-costcenter     = '14101201'.
+
+          st_poitemsche-po_item       = st_saida-ebelp.
+          st_poitemschex-po_item      = st_saida-ebelp.
+          st_poitemsche-sched_line    = '0001'.
+          st_poitemsche-delivery_date = '20241010'.
+          st_poitemsche-com_date      = sy-datum.
+          st_poitemsche-quantity      = st_saida-menge.
+        ENDIF.
+      ENDLOOP.
+
+*      st_poheaderx-po_number       = 'X'.
+      st_poheaderx-comp_code       = 'X'.
+      st_poheaderx-doc_type        = 'X'.
+      st_poheaderx-doc_date        = 'X'.
+      st_poheaderx-creat_date      = 'X'.
+      st_poheaderx-vendor          = 'X'.
+      st_poheaderx-purch_org       = 'X'.
+      st_poheaderx-pur_group       = 'X'.
+      st_poheaderx-langu           = 'X'.
+*      st_poheaderx-currency        = 'X'.
+
+      st_poitemx-material          = 'X'.
+      st_poitemx-plant             = 'X'.
+      st_poitemx-stge_loc          = 'X'.
+      st_poitemx-quantity          = 'X'.
+      st_poitemx-tax_code          = 'X'.
+      st_poitemx-final_inv         = 'X'.
+*      st_poitemx-preq_no           = 'X'.
+*      st_poitemx-price_unit        = 'X'.
+*      st_poitemx-po_unit           = 'X'.
+      st_poitemx-net_price         = 'X'.
+      st_poitemx-bras_nbm          = 'X'.
+      st_poitemx-acctasscat        = 'X'.
+*      st_poitemx-matl_usage        = 'X'.
+*      st_poitemx-mat_origin        = 'X'.
+*      st_poitemx-indus3            = 'X'.
+
+*      st_poaccountx-creat_date     = 'X'.
+*      st_poaccountx-quantity       = 'X'.
+*      st_poaccountx-gl_account     = 'X'.
+*      st_poaccountx-costcenter     = 'X'.
+
+      st_poitemschex-sched_line    = 'X'.
+      st_poitemschex-delivery_date = 'X'.
+      st_poitemschex-com_date      = 'X'.
+      st_poitemschex-quantity      = 'X'.
+
+      APPEND st_poitem      TO it_poitem.
+      APPEND st_poitemx     TO it_poitemx.
+      APPEND st_poitemsche  TO it_poitemsche.
+      APPEND st_poitemschex TO it_poitemschex.
+*      APPEND st_poaccount   TO it_poaccount.
+*      APPEND st_poaccountx  TO it_poaccountx.
+
+      CALL FUNCTION 'BAPI_PO_CREATE1'
+        EXPORTING
+          poheader         = st_poheader
+          poheaderx        = st_poheaderx
+*          testrun          = 'X'
+        IMPORTING
+          exppurchaseorder = purchaseorder
+*          exppoexpimpheader = bapimepoheader
+*          expheader         = bapieikp
+        TABLES
+          return           = lt_ret
+          poitem           = it_poitem
+          poitemx          = it_poitemx
+          poschedule       = it_poitemsche
+          poschedulex      = it_poitemschex
+*         poaccount         = it_poaccount
+*         poaccountx        = it_poaccountx
+        .
+
+      BREAK-POINT.
+
+      IF NOT purchaseorder IS INITIAL.
+        CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+          EXPORTING
+            wait = 'X'.
+      ELSE.
+        CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
+      ENDIF.
+
+      READ TABLE lt_ret INTO ls_ret INDEX 1.
+      IF ls_ret-message = ''.
+        MESSAGE |PO Nao Criado!| TYPE 'I'.
+      ELSE.
+        DATA(mensagem) = ls_ret-message.
+        MESSAGE mensagem TYPE 'I'.
+      ENDIF.
+
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD added_function.
+
+    lo_nodes = salv_tree->get_nodes( ).
+
+    CASE e_salv_function.
+      WHEN 'PO'.
+        me->criar_po( ).
+      WHEN 'EXPAND'.
+        lo_nodes->expand_all( ).
+      WHEN 'COLAP'.
+        lo_nodes->collapse_all( ).
+      WHEN 'BACK'.
+        LEAVE TO SCREEN 0.
+      WHEN OTHERS.
+    ENDCASE.
+
+  ENDMETHOD.
+
+  METHOD mensagens.
+
+    CASE valor.
+      WHEN 'A'.
+        MESSAGE 'Sucesso!' TYPE 'I' DISPLAY LIKE 'S'.
+      WHEN 'E'.
+        MESSAGE 'Erro!' TYPE 'I' DISPLAY LIKE 'E'.
+      WHEN 'MC'.
+        MESSAGE 'Migo Já Criada!' TYPE 'I' DISPLAY LIKE 'E'.
+      WHEN 'ME'.
+        MESSAGE 'Migo Estornada!' TYPE 'I' DISPLAY LIKE 'E'.
+      WHEN OTHERS.
+
+    ENDCASE.
+
+  ENDMETHOD.
+
+ENDCLASS.

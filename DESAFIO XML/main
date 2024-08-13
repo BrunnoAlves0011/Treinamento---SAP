@@ -1,0 +1,227 @@
+*&---------------------------------------------------------------------*
+*& Report YDESAFIOXML_BH
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ydesafioxml_bh.
+
+DATA: gcl_xml TYPE REF TO cl_xml_document,
+      go_alv  TYPE REF TO cl_salv_table.
+
+TYPES: BEGIN OF ty_tab,
+         name  TYPE string,
+         value TYPE string,
+       END OF ty_tab,
+
+       BEGIN OF ty_name,
+         name TYPE string,
+       END OF ty_name,
+
+       BEGIN OF ty_value,
+         value TYPE string,
+       END OF ty_value.
+
+DATA: v_subrc      TYPE sysubrc,
+      v_node       TYPE REF TO if_ixml_node,
+      v_child_node TYPE REF TO if_ixml_node,
+      v_root       TYPE REF TO if_ixml_node,
+      v_iterator   TYPE REF TO if_ixml_node_iterator,
+      v_nodemap    TYPE REF TO if_ixml_named_node_map,
+      v_count      TYPE i,
+      v_index      TYPE i,
+      v_attr       TYPE REF TO if_ixml_node,
+      v_name       TYPE string,
+      v_prefix     TYPE string,
+      v_value      TYPE string,
+      v_char       TYPE char2.
+
+DATA: it_itab  TYPE STANDARD TABLE OF ty_tab,
+      wa_itab  TYPE ty_tab,
+      it_name  TYPE STANDARD TABLE OF ty_name,
+      wa_name  TYPE ty_name,
+      it_value TYPE STANDARD TABLE OF ty_value,
+      wa_value TYPE ty_value.
+
+DATA: it_fieldcat TYPE slis_t_fieldcat_alv,
+      wa_fieldcat TYPE slis_fieldcat_alv,
+      it_fcat     TYPE lvc_t_fcat,
+      wa_fcat     TYPE lvc_s_fcat.
+
+DATA: dy_table TYPE REF TO data,
+      dy_line  TYPE REF TO data.
+
+FIELD-SYMBOLS: <t_paymord> TYPE STANDARD TABLE.
+
+PARAMETERS: p_filnam TYPE localfile OBLIGATORY DEFAULT 'C:\Users\note1\Downloads\complexo.xml'.
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_filnam.
+
+  DATA: l_v_filename TYPE dynfnam.
+
+  l_v_filename = p_filnam.
+
+  CALL FUNCTION 'F4_FILENAME'
+    EXPORTING
+      program_name  = syst-cprog
+      dynpro_number = syst-dynnr
+      field_name    = l_v_filename
+    IMPORTING
+      file_name     = p_filnam.
+
+START-OF-SELECTION.
+  CREATE OBJECT gcl_xml.
+*  BREAK-POINT.
+*Upload XML File
+  CALL METHOD gcl_xml->import_from_file
+    EXPORTING
+      filename = p_filnam
+    RECEIVING
+      retcode  = v_subrc.
+
+  CHECK v_subrc = 0.
+
+  v_node = gcl_xml->m_document.
+
+  CHECK NOT v_node IS INITIAL.
+
+  v_iterator = v_node->create_iterator( ).
+  v_node = v_iterator->get_next( ).
+
+  WHILE NOT v_node IS INITIAL.
+    CASE v_node->get_type( ).
+
+      WHEN if_ixml_node=>co_node_element.
+        v_name = v_node->get_name( ).
+        v_nodemap = v_node->get_attributes( ).
+
+        IF NOT v_nodemap IS INITIAL.
+
+          v_count = v_nodemap->get_length( ).
+
+          DO v_count TIMES.
+
+            v_index = sy-index + 1.
+            v_attr = v_nodemap->get_item( v_index ).
+            v_name = v_attr->get_name( ).
+            v_prefix = v_attr->get_namespace_prefix( ).
+            v_value = v_attr->get_value( ).
+
+          ENDDO.
+        ENDIF.
+
+      WHEN if_ixml_node=>co_node_text OR if_ixml_node=>co_node_cdata_section.
+
+        v_value = v_node->get_value( ).
+        MOVE v_value TO v_char.
+
+        IF v_char <> cl_abap_char_utilities=>cr_lf.
+
+          wa_itab-name = v_name.
+          wa_name-name = v_name.
+          wa_itab-value = v_value.
+          wa_value-value = v_value.
+          APPEND wa_itab TO it_itab.
+          CLEAR wa_itab.
+
+        ENDIF.
+    ENDCASE.
+
+    v_node = v_iterator->get_next( ).
+
+  ENDWHILE.
+
+END-OF-SELECTION.
+  BREAK-POINT.
+  PERFORM monta_tabela.
+  PERFORM monta_dados.
+  BREAK-POINT.
+  PERFORM display.
+
+  BREAK-POINT.
+
+FORM display.
+
+*  TRY.
+*        cl_salv_table=>factory(
+*          IMPORTING
+*            r_salv_table = go_alv
+*          CHANGING
+*            t_table      = <t_paymord> ).
+*
+*      CATCH cx_salv_msg.
+*    ENDTRY.
+*
+*    go_alv->display( ).
+
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      i_callback_program = sy-repid
+      it_fieldcat        = it_fieldcat
+      i_default          = 'X'
+    TABLES
+      t_outtab           = <t_paymord>.
+
+ENDFORM.
+
+FORM monta_tabela.
+
+
+  DATA: pos      TYPE i,
+        primeiro TYPE string.
+
+  CLEAR: pos.
+
+  READ TABLE it_itab INTO wa_itab INDEX 1.
+  primeiro = wa_itab-name.
+
+  LOOP AT it_itab INTO wa_itab.
+    pos = pos + 1.
+    IF primeiro = wa_itab-name AND pos > 1.
+      EXIT.
+    ELSE.
+      wa_name-name = wa_itab-name.
+      APPEND wa_name TO it_name.
+      CLEAR: wa_name.
+      TRANSLATE wa_itab-name TO UPPER CASE.
+      wa_fcat-tabname = 'IT_ITAB'.
+      wa_fcat-fieldname = wa_itab-name.
+      wa_fcat-coltext = wa_itab-name.
+      wa_fcat-outputlen = '20'.
+      wa_fieldcat-col_pos = pos.
+      APPEND wa_fcat TO it_fcat.
+      CLEAR wa_fcat.
+      wa_fieldcat-tabname = 'IT_ITAB'.
+      wa_fieldcat-fieldname = wa_itab-name.
+      wa_fieldcat-seltext_l = wa_itab-name.
+      wa_fieldcat-col_pos = pos.
+      wa_fieldcat-outputlen = '20'.
+      APPEND wa_fieldcat TO it_fieldcat.
+      CLEAR wa_fieldcat.
+    ENDIF.
+  ENDLOOP.
+
+  CALL METHOD cl_alv_table_create=>create_dynamic_table
+    EXPORTING
+      it_fieldcatalog = it_fcat
+    IMPORTING
+      ep_table        = dy_table.
+
+  ASSIGN dy_table->* TO <t_paymord>.
+
+ENDFORM.
+
+FORM monta_dados.
+  DATA: pos TYPE i.
+
+  LOOP AT it_name INTO wa_name.
+    LOOP AT it_itab INTO wa_itab.
+      IF wa_itab-name = wa_name-name.
+        wa_value-value = wa_itab-value.
+        APPEND wa_value TO it_value.
+      ELSE.
+        CONTINUE.
+      ENDIF.
+    ENDLOOP.
+  ENDLOOP.
+
+ENDFORM.
