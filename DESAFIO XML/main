@@ -5,6 +5,8 @@
 *&---------------------------------------------------------------------*
 REPORT ydesafioxml_bh.
 
+TYPE-POOLS abap.
+
 DATA: gcl_xml TYPE REF TO cl_xml_document,
       go_alv  TYPE REF TO cl_salv_table.
 
@@ -19,7 +21,11 @@ TYPES: BEGIN OF ty_tab,
 
        BEGIN OF ty_value,
          value TYPE string,
-       END OF ty_value.
+       END OF ty_value,
+
+       BEGIN OF ty_teste,
+         value TYPE string,
+       END OF ty_teste.
 
 DATA: v_subrc      TYPE sysubrc,
       v_node       TYPE REF TO if_ixml_node,
@@ -33,10 +39,14 @@ DATA: v_subrc      TYPE sysubrc,
       v_name       TYPE string,
       v_prefix     TYPE string,
       v_value      TYPE string,
-      v_char       TYPE char2.
+      v_char       TYPE char2,
+      v_contra     TYPE i,
+      str          TYPE string,
+      v_first      TYPE string.
 
-DATA: it_itab  TYPE STANDARD TABLE OF ty_tab,
-      wa_itab  TYPE ty_tab,
+DATA: it_itab  TYPE TABLE OF ty_tab,
+      wa_itab  LIKE LINE OF it_itab,
+      wa_itab1 LIKE LINE OF it_itab,
       it_name  TYPE STANDARD TABLE OF ty_name,
       wa_name  TYPE ty_name,
       it_value TYPE STANDARD TABLE OF ty_value,
@@ -48,9 +58,11 @@ DATA: it_fieldcat TYPE slis_t_fieldcat_alv,
       wa_fcat     TYPE lvc_s_fcat.
 
 DATA: dy_table TYPE REF TO data,
-      dy_line  TYPE REF TO data.
+      dy_line  TYPE REF TO data,
+      dy_line1 TYPE REF TO data.
 
-FIELD-SYMBOLS: <t_paymord> TYPE STANDARD TABLE.
+FIELD-SYMBOLS: <t_paymord> TYPE STANDARD TABLE,
+               <l_line>, <l_line1>, <fs>.
 
 PARAMETERS: p_filnam TYPE localfile OBLIGATORY DEFAULT 'C:\Users\note1\Downloads\complexo.xml'.
 
@@ -70,7 +82,7 @@ AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_filnam.
 
 START-OF-SELECTION.
   CREATE OBJECT gcl_xml.
-*  BREAK-POINT.
+
 *Upload XML File
   CALL METHOD gcl_xml->import_from_file
     EXPORTING
@@ -129,29 +141,14 @@ START-OF-SELECTION.
     v_node = v_iterator->get_next( ).
 
   ENDWHILE.
-
+**PRA CIMA TA CERTO!
 END-OF-SELECTION.
-  BREAK-POINT.
   PERFORM monta_tabela.
   PERFORM monta_dados.
   BREAK-POINT.
   PERFORM display.
 
-  BREAK-POINT.
-
 FORM display.
-
-*  TRY.
-*        cl_salv_table=>factory(
-*          IMPORTING
-*            r_salv_table = go_alv
-*          CHANGING
-*            t_table      = <t_paymord> ).
-*
-*      CATCH cx_salv_msg.
-*    ENDTRY.
-*
-*    go_alv->display( ).
 
   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
     EXPORTING
@@ -160,11 +157,10 @@ FORM display.
       i_default          = 'X'
     TABLES
       t_outtab           = <t_paymord>.
-
+**AQUI TA CERTO (CIMA)
 ENDFORM.
 
 FORM monta_tabela.
-
 
   DATA: pos      TYPE i,
         primeiro TYPE string.
@@ -177,16 +173,17 @@ FORM monta_tabela.
   LOOP AT it_itab INTO wa_itab.
     pos = pos + 1.
     IF primeiro = wa_itab-name AND pos > 1.
+      str = wa_itab-name.
       EXIT.
     ELSE.
       wa_name-name = wa_itab-name.
       APPEND wa_name TO it_name.
       CLEAR: wa_name.
-      TRANSLATE wa_itab-name TO UPPER CASE.
+*      TRANSLATE wa_itab-name TO UPPER CASE.
       wa_fcat-tabname = 'IT_ITAB'.
       wa_fcat-fieldname = wa_itab-name.
       wa_fcat-coltext = wa_itab-name.
-      wa_fcat-outputlen = '20'.
+      wa_fcat-outputlen = 20.
       wa_fieldcat-col_pos = pos.
       APPEND wa_fcat TO it_fcat.
       CLEAR wa_fcat.
@@ -194,34 +191,70 @@ FORM monta_tabela.
       wa_fieldcat-fieldname = wa_itab-name.
       wa_fieldcat-seltext_l = wa_itab-name.
       wa_fieldcat-col_pos = pos.
-      wa_fieldcat-outputlen = '20'.
+      wa_fieldcat-outputlen = 20.
       APPEND wa_fieldcat TO it_fieldcat.
       CLEAR wa_fieldcat.
+      v_contra = v_contra + 1.
     ENDIF.
   ENDLOOP.
-
+**AQUI TA CERTO (CIMA)
   CALL METHOD cl_alv_table_create=>create_dynamic_table
     EXPORTING
-      it_fieldcatalog = it_fcat
+      i_style_table             = 'X'
+      it_fieldcatalog           = it_fcat
     IMPORTING
-      ep_table        = dy_table.
+      ep_table                  = dy_table
+    EXCEPTIONS
+      generate_subpool_dir_full = 1
+      OTHERS                    = 2.
 
   ASSIGN dy_table->* TO <t_paymord>.
+
+  CREATE DATA dy_line  LIKE LINE OF <t_paymord>.
+  CREATE DATA dy_line1 LIKE LINE OF <t_paymord>.
+
+  ASSIGN dy_line->* TO <l_line>.
+  ASSIGN dy_line1->* TO <l_line1>.
+
 
 ENDFORM.
 
 FORM monta_dados.
-  DATA: pos TYPE i.
+  DATA: pos      TYPE i,
+        primeiro TYPE string,
+        pos1     TYPE i,
+        v_p1     TYPE i.
 
-  LOOP AT it_name INTO wa_name.
-    LOOP AT it_itab INTO wa_itab.
-      IF wa_itab-name = wa_name-name.
-        wa_value-value = wa_itab-value.
-        APPEND wa_value TO it_value.
-      ELSE.
-        CONTINUE.
-      ENDIF.
-    ENDLOOP.
+  CLEAR: pos.
+
+  READ TABLE it_itab INTO wa_itab INDEX 1.
+  primeiro = wa_itab-name.
+
+  LOOP AT it_itab INTO wa_itab.
+    IF primeiro = wa_itab-name.
+      pos = pos + 1.
+    ENDIF.
   ENDLOOP.
+
+  BREAK-POINT.
+
+  v_p1 = 1.
+
+  WHILE pos1 <> pos.
+
+    DO v_contra TIMES.
+
+      READ TABLE it_itab INTO wa_itab INDEX v_p1.
+      ASSIGN COMPONENT wa_itab-name OF STRUCTURE <l_line> TO <fs>.
+      <fs> = wa_itab-value.
+      UNASSIGN <fs>.
+      v_p1 = v_p1 + 1.
+
+    ENDDO.
+
+    pos1 = pos1 + 1.
+    APPEND <l_line> TO <t_paymord>.
+
+  ENDWHILE.
 
 ENDFORM.
