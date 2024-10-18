@@ -1,0 +1,143 @@
+REGISTRO A100 - CRIAÇÃO 
+  method if_ex_badi_j_1bpis~fill_register_a100.
+
+*   Variables
+    DATA: lt_jbnflin    TYPE j_1bnflin,
+          lt_jbnfstx    TYPE j_1bnfstx,
+          lt_jbindoc    TYPE j_1bindoc,
+          lt_bnfdoc     TYPE j_1bnfdoc,
+          ls_csreg_a100 TYPE cs_reg_a100.
+    
+*   Verify if cs_reg_a100 is filled
+    IF cs_reg_a100 IS INITIAL.
+     "If yes save the data present in cs_reg_a100, and continue
+      CLEAR ls_csreg_a100.
+      ls_csreg_a100 = cs_reg_a100.
+     "Verify if the register A100 is canceled or not
+      IF ls_csreg_a100-cod_sit = '02'.
+
+      ENDIF.
+    ENDIF.
+
+  endmethod.
+
+        cs_reg_a100-reg           = ls_csreg_a100-reg.
+        cs_reg_a100-ind_oper      = ls_csreg_a100-ind_oper.
+        cs_reg_a100-ind_emit      = ls_csreg_a100-ind_emit.
+        cs_reg_a100-cod_part      = ls_csreg_a100-cod_part.
+        cs_reg_a100-cod_sit       = ls_csreg_a100-cod_sit.
+        cs_reg_a100-ser           = ls_csreg_a100-ser.
+        cs_reg_a100-sub           = ls_csreg_a100-sub.
+        cs_reg_a100-num_doc       = ls_csreg_a100-num_doc.
+        cs_reg_a100-chv_nfse      = ls_csreg_a100-chv_nfse.
+        cs_reg_a100-dt_doc        = ls_csreg_a100-dt_doc.
+        cs_reg_a100-dt_exe_serv   = ls_csreg_a100-dt_exe_serv.
+        cs_reg_a100-vl_doc        = ls_csreg_a100-vl_doc.
+        cs_reg_a100-ind_pgto      = ls_csreg_a100-ind_pgto.
+        cs_reg_a100-vl_desc       = ls_csreg_a100-vl_desc.
+        cs_reg_a100-vl_bc_pis     = ls_csreg_a100-vl_bc_pis.
+        cs_reg_a100-vl_pis        = ls_csreg_a100-vl_pis.
+        cs_reg_a100-vl_bc_cofins  = ls_csreg_a100-vl_bc_cofins.
+        cs_reg_a100-vl_cofins     = ls_csreg_a100-vl_cofins.
+        cs_reg_a100-vl_pis_ret    = ls_csreg_a100-vl_pis_ret.
+        cs_reg_a100-vl_cofins_ret = ls_csreg_a100-vl_cofins_ret.
+        cs_reg_a100-vl_iss        = ls_csreg_a100-vl_iss.
+
+
+
+METHOD if_ex_badi_j_1bpis~fill_register_a100.
+  DATA: ls_1bnflin  TYPE j_1bnflin,
+        ls_1bnfstx  TYPE j_1bnfstx,
+        lv_rate_pis   TYPE j_1bpis_s_c170-aliq_pis_per    VALUE '1.65',
+        lv_rate_cof   TYPE j_1bpis_s_c170-aliq_cofins_per VALUE '7.60',
+        lv_base_cof   TYPE j_1bnfstx-base,
+        lv_base_pis   TYPE j_1bnfstx-base.
+
+  IF is_j_1bnfdoc-nftype EQ 'Z2'.
+    CLEAR: cs_reg_a100-vl_doc,
+           cs_reg_a100-vl_bc_pis,
+           cs_reg_a100-vl_bc_cofins.
+
+    LOOP AT it_j_1bnflin INTO ls_1bnflin.
+      cs_reg_a100-vl_doc       = cs_reg_a100-vl_doc  + ls_1bnflin-nfnet.
+    ENDLOOP.
+
+*PIS
+    cs_reg_a100-vl_bc_pis = cs_reg_a100-vl_doc.
+    cs_reg_a100-vl_pis    = cs_reg_a100-vl_bc_pis *
+                            lv_rate_pis / 100.
+    cs_reg_a100-vl_pis    = cs_reg_a100-vl_pis + '0.01'.
+
+* COFINS
+    cs_reg_a100-vl_bc_cofins = cs_reg_a100-vl_doc.
+    cs_reg_a100-vl_cofins    = cs_reg_a100-vl_bc_cofins *
+                            lv_rate_cof / 100.
+
+    cs_reg_a100-vl_cofins    = cs_reg_a100-vl_cofins + '0.01'.
+  ENDIF.
+
+ENDMETHOD.
+
+
+
+
+*  LOOP AT it_j_1bnfstx INTO ls_1bnfstx.
+*
+*    CASE ls_1bnfstx-taxtyp.
+*      WHEN 'ICOF'.
+*        IF cs_reg_a100-vl_bc_cofins <> ls_1bnfstx-base.
+*          cs_reg_a100-VL_DOC = cs_reg_a100-VL_DOC + ls_1bnfstx-base.
+*          cs_reg_a100-vl_bc_cofins = ls_1bnfstx-base.
+*        ENDIF.
+*      WHEN 'IPIS'.
+*        IF cs_reg_a100-vl_bc_pis <> ls_1bnfstx-base.
+*          cs_reg_a100-vl_bc_pis = ls_1bnfstx-base.
+*        ENDIF.
+*    ENDCASE.
+*
+*  ENDLOOP.
+
+
+
+
+
+  DATA:  lc_mtart TYPE mara-mtart.
+  CLEAR: lc_mtart.
+
+**********************************************************************
+*** Código do Gênero - Documento Contábil - CS_REG_0200-COD_GEN
+**********************************************************************
+* Preenchendo a Informação com os dois primeiros dígitos do NCM
+  SELECT SINGLE mtart
+   FROM mara
+    INTO lc_mtart
+    WHERE matnr = is_j_1bnflin-matnr.
+  IF sy-subrc EQ 0.
+    IF lc_mtart EQ 'ZBSV' OR
+       lc_mtart EQ 'DIEN'. "Serviço
+      cs_reg_a170-nat_bc_cred = '13'.
+    ENDIF.
+  ENDIF.
+
+  cs_reg_a170-vl_bc_pis    = cs_reg_a170-vl_item.
+  cs_reg_a170-vl_bc_cofins = cs_reg_a170-vl_item.
+
+
+
+NAT_BC_CRED 			      = C 002
+IDENT_BEM_IMOB          = N 002             
+IND_ORIG_CRED           = C 001             
+IND_UTIL_BEM_IMOB       = N 001           
+VL_OPER_DEP             = N      02      
+PARC_OPER_NAO_BC_CRED   = N      02               
+CST_PIS                 = N 002     
+VL_BC_PIS               = N      02   
+ALIQ_PIS                = N 008  04 
+VL_PIS                  = N      02
+CST_COFINS              = N 002    
+VL_BC_COFINS            = N      02     
+ALIQ_COFINS             = N 008  04     
+VL_COFINS               = N      02   
+COD_CTA                 = C 060 
+COD_CCUS                = C 060 
+DESC_ BEM_IMOB          = C 255                                

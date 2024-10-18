@@ -1,0 +1,54 @@
+*--------------------------------------------------------------------*
+* Report YDESAFIOYUYU_BH                                             *
+*--------------------------------------------------------------------*
+*                                                                    *
+*--------------------------------------------------------------------*
+REPORT ytestes_bh_03.
+*--------------------------------------------------------------------*
+*                   TELA DO RELATÓRIO                                *
+*------------FORNECEDOR                                              *
+*----------------PEDIDO DE COMPRA                                    *
+*--------------------ITEM DO PEDIDO ( EKPO-EBELP )                   *
+*--------------------------------------------------------------------*
+
+*--------------------------------------------------------------------*
+*         NA TELA DO RELATÓRIO, TERÁ 4 BOTÕES:                       *
+*--------------------------------------------------------------------*
+*                                                                    *
+*         GERAR MIGO                                                 *
+*                                                                    *
+*         GERAR MIRO                                                 *
+*                                                                    *
+*         ESTORNAR MIGO                                              *
+*                                                                    *
+*         ESTORNAR MIRO                                              *
+*                                                                    *
+*--------------------------------------------------------------------*
+DATA: salv_tree TYPE REF TO cl_salv_tree.
+
+INCLUDE YTESTES_BH_03_IN_SCR.
+*INCLUDE: ydesafioyuyu_bh_in_scr,
+INCLUDE YTESTES_BH_03_IN_MODEL.
+*         ydesafioyuyu_bh_in_model,
+INCLUDE YTESTES_BH_03_IN_VIEW.
+*         ydesafioyuyu_bh_in_view,
+INCLUDE YTESTES_BH_03_IN_CONTROLLER.
+*         ydesafioyuyu_bh_in_controller.
+
+DATA: gc_controller TYPE REF TO report_controller.
+
+INITIALIZATION.
+  CREATE OBJECT gc_controller.
+  gc_controller->initialization( ).
+
+AT SELECTION-SCREEN OUTPUT.
+  gc_controller->selection_screen_o( ).
+
+AT SELECTION-SCREEN.
+  gc_controller->selection_screen( ).
+
+START-OF-SELECTION.
+  gc_controller->start_of_selection( ).
+
+END-OF-SELECTION.
+  gc_controller->end_of_selection( ).

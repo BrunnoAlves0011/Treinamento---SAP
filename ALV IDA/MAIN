@@ -1,0 +1,93 @@
+*&---------------------------------------------------------------------*
+*& Report YTALV_IDA
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ytalv_ida.
+
+CLASS lcl_handler DEFINITION.
+
+  PUBLIC SECTION.
+    METHODS: alv_handler FOR EVENT double_click OF if_salv_gui_table_display_opt IMPORTING ev_field_name eo_row_data.
+
+ENDCLASS.
+
+CLASS lcl_handler IMPLEMENTATION.
+
+  METHOD alv_handler.
+
+  ENDMETHOD.
+
+ENDCLASS.
+
+DATA: handler  TYPE REF TO lcl_handler.
+
+START-OF-SELECTION.
+  CREATE OBJECT handler.
+
+*   CRIA O ALV IDA
+  CALL METHOD cl_salv_gui_table_ida=>create
+    EXPORTING
+      iv_table_name        = 'ZYUYUTEST_BH' "'ZDVIEW'
+    RECEIVING
+      ro_alv_gui_table_ida = DATA(ob1). "IF_SALV_GUI_TABLE_IDA
+
+  IF sy-subrc = 0.
+* DEFINI O NUMERO MAXIMO DE LINHAS NO ALV
+    ob1->set_maximum_number_of_rows( iv_number_of_rows = 50 ).
+
+* PEGA AS CONFIGURAÇÕES DE FUNÇOES STANDARDS DO ALV
+    CALL METHOD ob1->standard_functions
+      RECEIVING
+        ro_standard_functions = DATA(ob4). "IF_SALV_GUI_STD_FUNCTIONS_IDA - IDA API Standard Functions Manipulation
+
+* DESATIVA A FUNÇÃO PRINT DO ALV
+*CALL METHOD ob4->set_print_active
+*  EXPORTING
+*    iv_active = abap_false.
+* OUTRO JEITO DE DESATIVAR A FUNÇÃO PRINT DO ALV
+    ob4->set_print_active( iv_active = abap_false ).
+
+* DESATIVA A FUNÇÃO DE SOMATORIA DE COLUNAS
+    ob4->set_aggregation_active( iv_active = abap_false ).
+
+* ATIVA A FUNÇÃO DE PESQUISA DE TEXTO
+    ob4->set_text_search_active( iv_active = abap_true ).
+
+** PEGA AS CONFIGURAÇÕES DE TOOLBAR DO ALV
+*CALL METHOD ob1->toolbar
+*  RECEIVING
+*    ro_toolbar = DATA(ob4).
+*
+** DESATIVA AS FUNÇOES STANDARD DO ALV
+*ob4->hide_all_standard_functions( ).
+  ELSE.
+    MESSAGE 'ERRO' TYPE 'E'.
+  ENDIF.
+* PEGA AS CONFIGURAÇÕES DE DISPLAY DO ALV
+  CALL METHOD ob1->display_options
+    RECEIVING
+      ro_display_options = DATA(ob3). "IF_SALV_GUI_TABLE_DISPLAY_OPT
+  IF sy-subrc = 0.
+* HABILITA O PATTERN DA COLUNA ALTERNADO
+    ob3->enable_alternating_row_pattern( ).
+    ob3->enable_double_click( ).
+
+* ALTERA O TITULO APRESENTADO NO ALV
+    ob3->set_title( iv_title = '* ALV IDA *' ).
+  ELSE.
+    MESSAGE 'ERRO' TYPE 'E'.
+  ENDIF.
+
+* CONFIGURA O DISPLAY DO ALV
+  CALL METHOD ob1->fullscreen
+    RECEIVING
+      ro_fullscreen = DATA(ob2). "IF_SALV_GUI_FULLSCREEN_IDA
+
+  IF sy-subrc = 0.
+
+* MOSTRA O ALV
+    ob2->display( ).
+  ELSE.
+    MESSAGE 'ERRO' TYPE 'E'.
+  ENDIF.

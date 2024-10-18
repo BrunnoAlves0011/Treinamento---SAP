@@ -1,0 +1,478 @@
+*&---------------------------------------------------------------------*
+*& Include          YDESAFIOYUYU_BH_IN_MODEL
+*&---------------------------------------------------------------------*
+
+CLASS report_model DEFINITION.
+
+  PUBLIC SECTION.
+
+    TYPES: BEGIN OF ty_table,
+             lifnr TYPE ekko-lifnr,
+             ebeln TYPE ekpo-ebeln,
+             ebelp TYPE ekpo-ebelp,
+           END OF ty_table.
+
+    TYPES: BEGIN OF lt_data,
+             lifnr TYPE ekko-lifnr,
+             ebeln TYPE ekpo-ebeln,
+             ebelp TYPE ekpo-ebelp,
+           END OF lt_data.
+
+    TYPES: BEGIN OF lt_validate,
+             mblnr TYPE mseg-mblnr,
+             ebeln TYPE mseg-ebeln,
+             bwart TYPE mseg-bwart,
+             smbln TYPE mseg-smbln,
+             zeile TYPE mseg-zeile,
+             mjahr TYPE mseg-mjahr,
+           END OF lt_validate.
+
+    TYPES: BEGIN OF ty_saida.
+             INCLUDE TYPE zyuyutest_bh.
+    TYPES END OF ty_saida.
+
+    TYPES: BEGIN OF ty_ekko,
+             lifnr TYPE ekko-lifnr,
+             aedat TYPE ekko-aedat,
+             bukrs TYPE ekko-bukrs,
+             waers TYPE ekko-waers,
+             ebeln TYPE ekko-ebeln,
+           END OF ty_ekko,
+
+           BEGIN OF ty_ekpo,
+             ebeln TYPE ekpo-ebeln,
+             ebelp TYPE ekpo-ebelp,
+             werks TYPE ekpo-werks,
+             lgort TYPE ekpo-lgort,
+             meins TYPE ekpo-meins,
+             menge TYPE ekpo-menge,
+             matnr TYPE ekpo-matnr,
+             netwr TYPE ekpo-netwr,
+           END OF ty_ekpo,
+
+           BEGIN OF ty_mseg,
+             mblnr TYPE mseg-mblnr,
+             ebeln TYPE mseg-ebeln,
+             bwart TYPE mseg-bwart,
+             smbln TYPE mseg-smbln,
+             zeile TYPE mseg-zeile,
+             mjahr TYPE mseg-mjahr,
+           END OF ty_mseg.
+
+    DATA: it_ekko TYPE TABLE OF ty_ekko,
+          wa_ekko TYPE ty_ekko,
+          it_ekpo TYPE TABLE OF ty_ekpo,
+          wa_ekpo TYPE ty_ekpo,
+          it_mseg TYPE TABLE OF ty_mseg,
+          wa_mseg TYPE ty_mseg.
+
+    DATA: it_table    TYPE TABLE OF ty_table,
+          st_table    TYPE ty_table,
+          tree_table  TYPE STANDARD TABLE OF ty_table,
+          it_saida    TYPE TABLE OF ty_saida,
+          st_saida    TYPE ty_saida,
+          wa_saida    TYPE lt_data,
+          it_validate TYPE TABLE OF lt_validate,
+          st_validate TYPE lt_validate.
+
+    DATA: lo_nodes TYPE REF TO cl_salv_nodes.
+
+    DATA: lt_ret TYPE STANDARD TABLE OF bapiret2,
+          ls_ret TYPE bapiret2.
+
+    DATA: ls_mmdochdr TYPE bapi2017_gm_head_01,
+          lt_gm       TYPE STANDARD TABLE OF bapi2017_gm_item_create,
+          ls_gm       TYPE bapi2017_gm_item_create,
+          ls_mrhdr    TYPE bapi_incinv_create_header,
+          lt_gmr      TYPE STANDARD TABLE OF bapi_incinv_create_item,
+          ls_gmr      TYPE bapi_incinv_create_item.
+
+    DATA: lt_matdoc  TYPE bapi2017_gm_head_ret-mat_doc,
+          lt_docyear TYPE bapi2017_gm_head_ret-doc_year,
+          ls_gm_ret  TYPE bapi2017_gm_head_02.
+
+    METHODS: start_of_selection,
+      select_dados,
+      validate_miro IMPORTING valor TYPE ekpo-ebeln,
+      validate_migo IMPORTING valor TYPE ekpo-ebeln,
+      criar_migo,
+      criar_miro,
+      estornar_migo,
+      estornar_miro,
+      added_function   FOR EVENT added_function OF cl_salv_events_tree
+        IMPORTING e_salv_function,
+      mensagens IMPORTING valor TYPE c.
+
+ENDCLASS.
+
+CLASS report_model IMPLEMENTATION.
+
+  METHOD start_of_selection.
+
+    me->select_dados( ).
+
+  ENDMETHOD.
+
+  METHOD select_dados.
+
+    SELECT lifnr, aedat, bukrs, waers, ebeln
+      FROM ekko
+      INTO TABLE @it_ekko UP TO 200 ROWS
+      WHERE aedat IN @fil_per
+      AND   ebeln IN @fil_ped
+      AND   lifnr <> ''
+      AND   bukrs <> ''.
+
+    SELECT ebeln, ebelp, werks, lgort, meins, menge, matnr, netwr
+      FROM ekpo
+      INTO TABLE @it_ekpo
+      FOR ALL ENTRIES IN @it_ekko
+      WHERE ebeln = @it_ekko-ebeln
+      AND   werks <> ''
+      AND   lgort <> ''.
+
+    LOOP AT it_ekko INTO wa_ekko.
+      LOOP AT it_ekpo INTO wa_ekpo WHERE ebeln = wa_ekko-ebeln.
+
+        st_table-lifnr = wa_ekko-lifnr.
+        st_table-ebeln = wa_ekpo-ebeln.
+        st_table-ebelp = wa_ekpo-ebelp.
+        APPEND st_table TO it_table.
+
+        st_saida-aedat = wa_ekko-aedat.
+        st_saida-bukrs = wa_ekko-bukrs.
+        st_saida-ebeln = wa_ekpo-ebeln.
+        st_saida-ebelp = wa_ekpo-ebelp.
+        st_saida-lgort = wa_ekpo-lgort.
+        st_saida-matnr = wa_ekpo-matnr.
+        st_saida-meins = wa_ekpo-meins.
+        st_saida-menge = wa_ekpo-menge.
+        st_saida-netwr = wa_ekpo-netwr.
+        st_saida-waers = wa_ekko-waers.
+        st_saida-werks = wa_ekpo-werks.
+        st_saida-lifnr = wa_ekko-lifnr.
+        APPEND st_saida TO it_saida.
+
+      ENDLOOP.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD validate_miro.
+
+    DATA: pedido      TYPE ekpo-ebeln.
+
+    SELECT mseg~mblnr, mseg~ebeln, mseg~bwart, mseg~smbln, mseg~zeile, mseg~mjahr
+         FROM mseg
+         INNER JOIN mkpf ON mseg~mblnr = mkpf~mblnr
+         WHERE mseg~ebeln = @valor
+         AND mseg~mjahr = '2024'
+         INTO CORRESPONDING FIELDS OF TABLE @it_validate.
+
+    SORT it_validate DESCENDING BY mblnr.
+
+    READ TABLE it_validate INTO st_validate INDEX 1.
+    IF st_validate-bwart = '102'.
+      IF st_validate-smbln = it_validate[ 2 ]-mblnr.
+        me->mensagens( 'ME' ).
+        EXIT.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD validate_migo.
+    CLEAR: it_validate.
+
+    SELECT mseg~mblnr, mseg~ebeln, mseg~bwart, mseg~smbln, mseg~zeile, mseg~mjahr
+      FROM mseg
+      INNER JOIN mkpf ON mseg~mblnr = mkpf~mblnr
+      WHERE mseg~ebeln = @valor
+      AND mseg~mjahr = '2024'
+      INTO CORRESPONDING FIELDS OF TABLE @it_validate.
+
+    SORT it_validate DESCENDING BY mblnr.
+
+    READ TABLE it_validate INTO st_validate INDEX 1.
+    IF st_validate-bwart = '102'.
+      IF it_validate[ 2 ]-smbln = st_validate-mblnr.
+        me->mensagens( 'ME' ).
+        EXIT.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD estornar_migo.
+
+    DATA: valor     TYPE ekpo-ebeln,
+          lv_shift  TYPE string,
+          lv_string TYPE string.
+
+    DATA(selected_line) = salv_tree->get_selections( )->get_selected_nodes( ).
+
+    IF selected_line IS INITIAL.
+      me->mensagens( 'E' ).
+    ELSE.
+
+      DATA(linha) = selected_line[ 1 ].
+      DATA(data) = linha-node->get_data_row( ).
+
+      FIELD-SYMBOLS: <line> TYPE lt_data.
+      ASSIGN data->* TO <line>.
+
+      wa_saida = <line>.
+      valor = wa_saida-ebeln.
+
+      me->validate_migo( valor ).
+
+      LOOP AT it_saida INTO st_saida.
+        IF st_saida-ebeln = it_validate[ 1 ]-ebeln.
+          ls_gm_ret-mat_doc       = it_validate[ 1 ]-mblnr.
+          ls_gm_ret-doc_year      = '2024'.
+          ls_gm_ret-pstng_date    = '20240202'.
+          EXIT.
+        ELSE.
+          CONTINUE.
+        ENDIF.
+      ENDLOOP.
+
+      CALL FUNCTION 'BAPI_GOODSMVT_CANCEL'
+        EXPORTING
+          materialdocument    = ls_gm_ret-mat_doc
+          matdocumentyear     = ls_gm_ret-doc_year
+          goodsmvt_pstng_date = ls_gm_ret-pstng_date
+          goodsmvt_pr_uname   = sy-uname
+        TABLES
+          return              = lt_ret.
+      CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+        EXPORTING
+          wait = 'X'.
+      CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
+
+      IF lt_ret IS INITIAL.
+        READ TABLE lt_ret INTO ls_ret INDEX 1.
+        IF ls_ret-message = ''.
+          MESSAGE |Migo Estornada!| TYPE 'I'.
+        ELSE.
+          DATA(mensagem) = ls_ret-message.
+          MESSAGE mensagem TYPE 'I'.
+        ENDIF.
+      ENDIF.
+
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD estornar_miro.
+
+*    UTILIZE O SHDB, TRANSAÇÃO MR8M
+    CALL TRANSACTION 'SHDB' WITH AUTHORITY-CHECK AND SKIP FIRST SCREEN.
+
+  ENDMETHOD.
+
+  METHOD criar_migo.
+    CLEAR: lt_gm, ls_mmdochdr, lt_ret.
+
+    DATA: valor   TYPE ekpo-ebeln.
+
+    DATA(selected_line) = salv_tree->get_selections( )->get_selected_nodes( ).
+
+    IF selected_line IS INITIAL.
+      me->mensagens( 'E' ).
+    ELSE.
+      DATA(linha) = selected_line[ 1 ].
+      DATA(data) = linha-node->get_data_row( ).
+
+      FIELD-SYMBOLS: <line> TYPE lt_data.
+      ASSIGN data->* TO <line>.
+
+      wa_saida = <line>.
+
+      valor = wa_saida-ebeln.
+
+      LOOP AT it_saida INTO st_saida.
+        IF st_saida-ebeln = valor.
+          ls_gm-po_item        = st_saida-ebelp.
+          ls_gm-ref_doc        = st_saida-ebeln.
+          ls_gm-ref_doc_it     = st_saida-ebelp.
+*          IF st_saida-menge = ' ' or st_saida-menge = '0'.
+          ls_gm-entry_qnt      = '1'.
+*          ELSE.
+*            ls_gm-entry_qnt    = st_saida-menge.
+*          ENDIF.
+          ls_gm-entry_uom      = st_saida-meins.
+          ls_gm-stge_loc       = st_saida-lgort.
+          ls_gm-plant          = st_saida-werks.
+          ls_gm-material       = st_saida-matnr.
+          ls_gm-po_number      = valor.
+          ls_gm-move_type      = '101'.
+          ls_gm-mvt_ind        = 'B'.
+          ls_mmdochdr-doc_date = st_saida-aedat.
+          ls_mmdochdr-ref_doc_no = st_saida-ebeln.
+          APPEND ls_gm TO lt_gm.
+          EXIT.
+        ELSE.
+          CONTINUE.
+        ENDIF.
+      ENDLOOP.
+
+      ls_mmdochdr-pstng_date = '20240202'.
+      ls_mmdochdr-pr_uname   = sy-uname.
+
+      CALL FUNCTION 'BAPI_GOODSMVT_CREATE'
+        EXPORTING
+          goodsmvt_header  = ls_mmdochdr
+          goodsmvt_code    = '01'
+*         testrun          = 'X'
+        IMPORTING
+          materialdocument = lt_matdoc
+          matdocumentyear  = lt_docyear
+        TABLES
+          goodsmvt_item    = lt_gm
+          return           = lt_ret.
+
+      IF lt_docyear IS INITIAL.
+        CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
+      ELSE.
+        CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'.
+      ENDIF.
+
+      IF lt_ret IS INITIAL.
+        MESSAGE |Migo Criada! { lt_matdoc }  Ano: { lt_docyear }| TYPE 'I'.
+      ELSE.
+        READ TABLE lt_ret INTO ls_ret INDEX 1.
+        DATA(mensagem) = ls_ret-message.
+        MESSAGE mensagem TYPE 'I'.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD criar_miro.
+    CLEAR: lt_ret, lt_gmr.
+    CONSTANTS c_x TYPE c VALUE 'X'.
+
+    DATA: valor      TYPE ekpo-ebelp,
+          fiscalyear TYPE bapi_incinv_fld-fisc_year,
+          docnumber  TYPE bapi_incinv_fld-inv_doc_no,
+          valor1     TYPE ekpo-ebeln.
+
+    DATA(selected_line) = salv_tree->get_selections( )->get_selected_nodes( ).
+
+    IF selected_line IS INITIAL.
+      me->mensagens( 'E' ).
+    ELSE.
+      DATA(linha) = selected_line[ 1 ].
+      DATA(data) = linha-node->get_data_row( ).
+
+      FIELD-SYMBOLS: <line> TYPE lt_data.
+      ASSIGN data->* TO <line>.
+
+      wa_saida = <line>.
+
+      valor = wa_saida-ebelp.
+      valor1 = wa_saida-ebeln.
+      me->validate_miro( valor1 ).
+
+      LOOP AT it_saida INTO st_saida.
+        IF st_saida-ebelp = valor AND st_saida-ebeln = valor1.
+          READ TABLE it_validate INTO st_validate INDEX 1.
+          ls_gmr-invoice_doc_item = st_saida-ebelp.
+          ls_gmr-po_number        = st_saida-ebeln.
+          ls_gmr-po_item          = st_saida-ebelp.
+*          ls_gmr-ref_doc          = st_validate-mblnr.
+*          ls_gmr-ref_doc_year     = st_validate-mjahr.
+*          ls_gmr-ref_doc_it       = st_saida-ebelp.
+*          ls_gmr-de_cre_ind       = 'X'.
+          ls_gmr-po_pr_qnt        = st_saida-menge.
+          ls_gmr-quantity         = st_saida-menge.
+          ls_gmr-po_unit          = st_saida-meins.
+          ls_gmr-item_amount      = '1'.
+          ls_gmr-tax_code         = 'C0'.
+          ls_mrhdr-comp_code      = st_saida-bukrs.
+          ls_mrhdr-currency       = st_saida-waers.
+          ls_mrhdr-ref_doc_no     = st_validate-mblnr.
+          APPEND ls_gmr TO lt_gmr.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
+
+      ls_mrhdr-invoice_ind    = 'X'.
+      ls_mrhdr-doc_type       = 'RE'.
+      ls_mrhdr-doc_date       = '20240301'.
+      ls_mrhdr-pstng_date     = '20240301'.
+      ls_mrhdr-pmnttrms       = '0001'.
+*      ls_mrhdr-simulation     = c_x.
+
+      CALL FUNCTION 'BAPI_INCOMINGINVOICE_CREATE'
+        EXPORTING
+          headerdata       = ls_mrhdr
+        IMPORTING
+          fiscalyear       = fiscalyear
+          invoicedocnumber = docnumber
+        TABLES
+          itemdata         = lt_gmr
+          return           = lt_ret.
+
+      IF docnumber IS INITIAL.
+        CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
+      ELSE.
+        CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'.
+      ENDIF.
+
+      IF lt_ret IS INITIAL.
+        MESSAGE |MIRO: { docnumber }  Ano fiscal: { fiscalyear }| TYPE 'I'.
+      ELSE.
+        READ TABLE lt_ret INTO ls_ret INDEX 1.
+        DATA(mensagem) = ls_ret-message.
+        MESSAGE mensagem TYPE 'I'.
+      ENDIF.
+    ENDIF.
+
+    EXIT.
+
+  ENDMETHOD.
+
+  METHOD added_function.
+
+    lo_nodes = salv_tree->get_nodes( ).
+
+    CASE e_salv_function.
+      WHEN 'MIGO1'.
+        me->criar_migo( ).
+      WHEN 'MIRO1'.
+        me->criar_miro( ).
+      WHEN 'MIGO2'.
+        me->estornar_migo( ).
+      WHEN 'MIRO2'.
+        me->estornar_miro( ).
+      WHEN 'EXPAND'.
+        lo_nodes->expand_all( ).
+      WHEN 'COLAP'.
+        lo_nodes->collapse_all( ).
+      WHEN 'BACK'.
+        LEAVE TO SCREEN 0.
+      WHEN OTHERS.
+    ENDCASE.
+
+  ENDMETHOD.
+
+  METHOD mensagens.
+
+    CASE valor.
+      WHEN 'A'.
+        MESSAGE 'Sucesso!' TYPE 'I' DISPLAY LIKE 'S'.
+      WHEN 'E'.
+        MESSAGE 'Erro!' TYPE 'I' DISPLAY LIKE 'E'.
+      WHEN 'MC'.
+        MESSAGE 'Migo Já Criada!' TYPE 'I' DISPLAY LIKE 'E'.
+      WHEN 'ME'.
+        MESSAGE 'Migo Estornada!' TYPE 'I' DISPLAY LIKE 'E'.
+      WHEN OTHERS.
+
+    ENDCASE.
+
+  ENDMETHOD.
+
+ENDCLASS.

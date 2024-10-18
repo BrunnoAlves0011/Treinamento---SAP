@@ -1,0 +1,20 @@
+*&---------------------------------------------------------------------*
+*& Report YSELECT_COUNT
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT yselect_count.
+
+TABLES: lfa1.
+
+PARAMETERS: p_lifnr TYPE lfa1-lifnr.
+
+SELECT COUNT( * )
+  FROM lfa1
+  WHERE lifnr = p_lifnr.
+
+IF sy-subrc = 0.
+  WRITE: 'Fornecedor Encontrado'.
+ELSE.
+  WRITE: 'Fornecedor Não Encontrado'.
+ENDIF.
